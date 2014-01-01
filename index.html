@@ -1,0 +1,19 @@
+<html>
+<head>
+<title>Filefy</title>
+</head>
+<body>
+  <div id="main-content">
+    <input onchange="torrentArrived(this.files)" type="file" accept="application/x-bittorrent" id="torrentFileChooser" name="torrentFile[]" multiple>
+    <!-- <input onchange="addFiles(this.files)" type="file" id="files" name="files[]" multiple> -->
+  </div>
+  <!-- <script type="text/javascript" src="files.js"></script> -->
+  <script type="text/javascript" src="bencoding.js"></script>
+  <script type="text/javascript" src="randomness.js"></script>
+  <script type="text/javascript">
+    var torrentArrived = function(file) {
+      console.log(file);
+    };
+  </script>
+</body>
+</html>

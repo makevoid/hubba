@@ -1,0 +1,29 @@
+{
+  "name": "hubba",
+  "version": "0.0.1",
+  "description": "Javascript P2P.",
+  "homepage": "https://github.com/wouldgo/hubba",
+  "keywords": [
+    "p2p",
+    "sharing",
+    "privacy",
+    "chiper"
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wouldgo/hubba.git"
+  },
+  "license" : "GPL-3.0",
+  "dependencies" : {
+  },
+  "exportsOverride": {
+  },
+  "authors": [
+    {
+    "name": "Dario Andrei",
+    "email": "wouldgo84@gmail.com",
+    "url": "https://github.com/wouldgo"
+    }
+  ]
+}

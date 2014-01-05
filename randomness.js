@@ -22,12 +22,3 @@ var nodeID = (function() {
 
 	return theRandomValue;
 })();
-
-(function() {
-	console.log(nodeID);
-	var list = ["aaa", 1, "a", {a:1, b:2}]
-		,	res = BEncode.encode(list);
-  console.log(list);
-  console.log(res);
-  console.log(BEncode.decode(res));
-})();

@@ -25,7 +25,7 @@ module.exports = function(grunt) {
         src: [
           'randomness.js'
         ]
-      },
+      }//,
       //test: {
       //  src: ['spec/**/*.js']
       //}

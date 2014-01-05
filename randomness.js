@@ -25,7 +25,9 @@ var nodeID = (function() {
 
 (function() {
 	console.log(nodeID);
-  var res = BEncode.encode(["aaa", 1, "a", {a:1, b:2}]);
+	var list = ["aaa", 1, "a", {a:1, b:2}]
+		,	res = BEncode.encode(list);
+  console.log(list);
   console.log(res);
   console.log(BEncode.decode(res));
 })();

@@ -1,7 +1,9 @@
+'use strict';
+
 window.BEncode = (function() {
   var onlyEs = '^e+'
   , stringLengthVar = /(\d+):/
-  , _toDeserialize = undefined
+  , _toDeserialize
   , listDecode = function() {
 
     var toReturn = [];
@@ -19,14 +21,14 @@ window.BEncode = (function() {
       } else if (subElementStartsWith === 'i') {
 
         var numberValue = integerDecode();
-        toReturn.push(new Number(numberValue[1]).valueOf());
+        toReturn.push(Number(numberValue[1]).valueOf());
         BEncode._toDeserialize = BEncode._toDeserialize.substr(numberValue[0].length);
       } else {
 
         var toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
         var stringValue = stringDecode(toDecode);
         toReturn.push(stringValue);
-      };
+      }
     } while(BEncode._toDeserialize.match(onlyEs) === null &&
       BEncode._toDeserialize !== '');
 
@@ -38,9 +40,12 @@ window.BEncode = (function() {
     var toReturn = {};
     do {
 
-      var tmpKey = undefined
-        , tmpValue = undefined
-        , subElementStartsWith = BEncode._toDeserialize.substr(0, 1);
+      var tmpKey
+        , tmpValue
+        , subElementStartsWith = BEncode._toDeserialize.substr(0, 1)
+        , numberValue
+        , toDecode
+        , stringValue;
       if (subElementStartsWith === 'l') {
 
         BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
@@ -51,15 +56,15 @@ window.BEncode = (function() {
         tmpKey = mapDecode();
       } else if (subElementStartsWith === 'i') {
 
-        var numberValue = integerDecode();
-        tmpKey = new Number(numberValue[1]).valueOf();
+        numberValue = integerDecode();
+        tmpKey = Number(numberValue[1]).valueOf();
         BEncode._toDeserialize = BEncode._toDeserialize.substr(numberValue[0].length);
       } else {
 
-        var toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
-        var stringValue = stringDecode(toDecode);
+        toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
+        stringValue = stringDecode(toDecode);
         tmpKey = stringValue;
-      };
+      }
 
       subElementStartsWith = BEncode._toDeserialize.substr(0, 1);
       if (subElementStartsWith === 'l') {
@@ -72,21 +77,21 @@ window.BEncode = (function() {
         tmpValue = mapDecode();
       } else if (subElementStartsWith === 'i') {
 
-        var numberValue = integerDecode();
-        tmpValue = new Number(numberValue[1]).valueOf();
+        numberValue = integerDecode();
+        tmpValue = Number(numberValue[1]).valueOf();
         BEncode._toDeserialize = BEncode._toDeserialize.substr(numberValue[0].length);
       } else {
 
-        var toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
-        var stringValue = stringDecode(toDecode);
+        toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
+        stringValue = stringDecode(toDecode);
         tmpValue = stringValue;
-      };
+      }
 
       toReturn[tmpKey] = tmpValue;
     } while(BEncode._toDeserialize.match(onlyEs) === null &&
       BEncode._toDeserialize !== '');
 
-    BEncode._toDeserialize = BEncode._toDeserialize.substr(1);    
+    BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
     return toReturn;
   }
   , integerDecode = function() {
@@ -96,7 +101,7 @@ window.BEncode = (function() {
   }
   , stringDecode = function(stringLength) {
 
-    var numStringLength = new Number(stringLength).valueOf()
+    var numStringLength = Number(stringLength).valueOf()
       , stringLengthDelimiter = stringLength.split('').length + 1
       , toReturn = BEncode._toDeserialize.substr(stringLengthDelimiter, numStringLength);
     BEncode._toDeserialize = BEncode._toDeserialize.substr(numStringLength + stringLengthDelimiter);
@@ -106,7 +111,8 @@ window.BEncode = (function() {
   var encode = function(element) {
     if (element) {
 
-      var typeVal = toString.call(element);
+      var typeVal = toString.call(element)
+        , toReturn;
       if (typeVal === '[object String]') {
 
         return element.length + ':' + element;
@@ -119,16 +125,16 @@ window.BEncode = (function() {
         typeVal === '[object Uint16Array]' ||
         typeVal === '[object Uint32Array]') {
 
-        var toReturn = 'l';
-        for (var i = 0, listLength = element.length; i < listLength; ++i) {
+        toReturn = 'l';
+        for (var i = 0, listLength = element.length; i < listLength; i += 1) {
 
           toReturn += BEncode.encode(element[i]);
-        };
+        }
         toReturn += 'e';
         return toReturn;
       } else if (typeVal === '[object Object]') {
 
-        var toReturn = 'd';
+        toReturn = 'd';
         for (var key in element) {
 
           if (element.hasOwnProperty(key)) {
@@ -141,11 +147,11 @@ window.BEncode = (function() {
       } else {
 
         throw 'Can not serialize.';
-      };
+      }
     } else {
 
       throw 'BEncode object needs an argument. Please provide this';
-    };
+    }
   }
   , decode = function(toDeserialize) {
     if (toDeserialize) {
@@ -162,17 +168,17 @@ window.BEncode = (function() {
         return mapDecode();
       } else if (startsWith === 'i') {
 
-        var retValue = BEncode._toDeserialize.substr(1, BEncode._toDeserialize.length - 2)
-        return new Number(retValue).valueOf();
+        var retValue = BEncode._toDeserialize.substr(1, BEncode._toDeserialize.length - 2);
+        return Number(retValue).valueOf();
       } else {
 
         var delimeterIndex = BEncode._toDeserialize.indexOf(':');
         return BEncode._toDeserialize.substr(delimeterIndex + 1);
-      };
+      }
     } else {
 
-      throw 'To deserialize value must be provided.'
-    };
+      throw 'To deserialize value must be provided.';
+    }
   };
 
   return {

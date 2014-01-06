@@ -23,7 +23,8 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
-          'randomness.js'
+          'randomness.js',
+          'bencoding.js'
         ]
       }//,
       //test: {

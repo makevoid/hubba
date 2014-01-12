@@ -5,8 +5,8 @@ module.exports = function(grunt) {
 //  var banner = ['/*!',
 //    ' * Hubba v<%= pkg.version %>',
 //    ' *',
-//    ' * Released under the GPL-3.0 license',
-//    ' * http://opensource.org/licenses/GPL-3.0',
+//    ' * Released under the GPL-2.0 license',
+//    ' * http://opensource.org/licenses/GPL-2.0',
 //    ' *',
 //    ' * <%= grunt.template.today("yyyy-mm-dd") %>',
 //    ' */\n\n'

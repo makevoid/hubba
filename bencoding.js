@@ -1,189 +1,196 @@
-'use strict';
+function BEncode(toDeserialize) {
+  'use strict';
 
-window.BEncode = (function() {
-  var onlyEs = '^e+'
-  , stringLengthVar = /(\d+):/
-  , _toDeserialize
-  , listDecode = function() {
+  if (toDeserialize) {
 
-    var toReturn = [];
-    do {
+    this._toDeserialize = toDeserialize;
+  } else {
 
-      var subElementStartsWith = BEncode._toDeserialize.substr(0, 1);
-      if (subElementStartsWith === 'l') {
-
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        toReturn.push(listDecode());
-      } else if (subElementStartsWith === 'd') {
-
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        toReturn.push(mapDecode());
-      } else if (subElementStartsWith === 'i') {
-
-        var numberValue = integerDecode();
-        toReturn.push(Number(numberValue[1]).valueOf());
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(numberValue[0].length);
-      } else {
-
-        var toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
-        var stringValue = stringDecode(toDecode);
-        toReturn.push(stringValue);
-      }
-    } while(BEncode._toDeserialize.match(onlyEs) === null &&
-      BEncode._toDeserialize !== '');
-
-    BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-    return toReturn;
+    throw 'To deserialize value must be provided.';
   }
-  , mapDecode = function() {
 
-    var toReturn = {};
-    do {
+  this.onlyEs = '^e+';
+  this.stringLengthVar = /(\d+):/;
+}
 
-      var tmpKey
-        , tmpValue
-        , subElementStartsWith = BEncode._toDeserialize.substr(0, 1)
-        , numberValue
-        , toDecode
-        , stringValue;
-      if (subElementStartsWith === 'l') {
+BEncode.encode = function(element) {
+  'use strict';
+  if (element !== undefined) {
 
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        tmpKey = listDecode();
-      } else if (subElementStartsWith === 'd') {
+    var typeVal = window.toString.call(element)
+      , toReturn;
+    if (typeVal === '[object String]') {
 
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        tmpKey = mapDecode();
-      } else if (subElementStartsWith === 'i') {
+      return element.length + ':' + element;
+    } else if (typeVal === '[object Number]') {
 
-        numberValue = integerDecode();
-        tmpKey = Number(numberValue[1]).valueOf();
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(numberValue[0].length);
-      } else {
+      return 'i' + element + 'e';
+    } else if (typeVal === '[object Array]' ||
+      typeVal === '[object Uint8ClampedArray]' ||
+      typeVal === '[object Uint8Array]' ||
+      typeVal === '[object Uint16Array]' ||
+      typeVal === '[object Uint32Array]') {
 
-        toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
-        stringValue = stringDecode(toDecode);
-        tmpKey = stringValue;
+      toReturn = 'l';
+      for (var i = 0, listLength = element.length; i < listLength; i += 1) {
+
+        toReturn += BEncode.encode(element[i]);
       }
+      toReturn += 'e';
+      return toReturn;
+    } else if (typeVal === '[object Object]') {
 
-      subElementStartsWith = BEncode._toDeserialize.substr(0, 1);
-      if (subElementStartsWith === 'l') {
+      toReturn = 'd';
+      for (var key in element) {
 
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        tmpValue = listDecode();
-      } else if (subElementStartsWith === 'd') {
+        if (element.hasOwnProperty(key)) {
 
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        tmpValue = mapDecode();
-      } else if (subElementStartsWith === 'i') {
-
-        numberValue = integerDecode();
-        tmpValue = Number(numberValue[1]).valueOf();
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(numberValue[0].length);
-      } else {
-
-        toDecode = stringLengthVar.exec(BEncode._toDeserialize)[1];
-        stringValue = stringDecode(toDecode);
-        tmpValue = stringValue;
-      }
-
-      toReturn[tmpKey] = tmpValue;
-    } while(BEncode._toDeserialize.match(onlyEs) === null &&
-      BEncode._toDeserialize !== '');
-
-    BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-    return toReturn;
-  }
-  , integerDecode = function() {
-    var integerForm = /i(\d+|-\d+)e/;
-    var numberValue = integerForm.exec(BEncode._toDeserialize);
-    return numberValue;
-  }
-  , stringDecode = function(stringLength) {
-
-    var numStringLength = Number(stringLength).valueOf()
-      , stringLengthDelimiter = stringLength.split('').length + 1
-      , toReturn = BEncode._toDeserialize.substr(stringLengthDelimiter, numStringLength);
-    BEncode._toDeserialize = BEncode._toDeserialize.substr(numStringLength + stringLengthDelimiter);
-    return toReturn;
-  };
-
-  var encode = function(element) {
-    if (element !== undefined) {
-
-      var typeVal = toString.call(element)
-        , toReturn;
-      if (typeVal === '[object String]') {
-
-        return element.length + ':' + element;
-      } else if (typeVal === '[object Number]') {
-
-        return 'i' + element + 'e';
-      } else if (typeVal === '[object Array]' ||
-        typeVal === '[object Uint8ClampedArray]' ||
-        typeVal === '[object Uint8Array]' ||
-        typeVal === '[object Uint16Array]' ||
-        typeVal === '[object Uint32Array]') {
-
-        toReturn = 'l';
-        for (var i = 0, listLength = element.length; i < listLength; i += 1) {
-
-          toReturn += BEncode.encode(element[i]);
+          toReturn += BEncode.encode(key) + BEncode.encode(element[key]);
         }
-        toReturn += 'e';
-        return toReturn;
-      } else if (typeVal === '[object Object]') {
-
-        toReturn = 'd';
-        for (var key in element) {
-
-          if (element.hasOwnProperty(key)) {
-
-            toReturn += BEncode.encode(key) + BEncode.encode(element[key]);
-          }
-        }
-        toReturn += 'e';
-        return toReturn;
-      } else {
-
-        throw 'Can not serialize.';
       }
+      toReturn += 'e';
+      return toReturn;
     } else {
 
-      throw 'BEncode object needs an argument. Please provide this';
+      throw 'Can not serialize.';
     }
+  } else {
+
+    throw 'BEncode object needs an argument. Please provide this';
   }
-  , decode = function(toDeserialize) {
-    if (toDeserialize) {
+};
 
-      BEncode._toDeserialize = toDeserialize;
-      var startsWith = BEncode._toDeserialize.substr(0, 1);
-      if (startsWith === 'l') {
+BEncode.prototype.decode = function() {
+  'use strict';
 
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        return listDecode();
-      } else if (startsWith === 'd') {
+  var startsWith = this._toDeserialize.substr(0, 1);
+  if (startsWith === 'l') {
 
-        BEncode._toDeserialize = BEncode._toDeserialize.substr(1);
-        return mapDecode();
-      } else if (startsWith === 'i') {
+    this._toDeserialize = this._toDeserialize.substr(1);
+    return this.listDecode();
+  } else if (startsWith === 'd') {
 
-        var retValue = BEncode._toDeserialize.substr(1, BEncode._toDeserialize.length - 2);
-        return Number(retValue).valueOf();
-      } else {
+    this._toDeserialize = this._toDeserialize.substr(1);
+    return this.mapDecode();
+  } else if (startsWith === 'i') {
 
-        var delimeterIndex = BEncode._toDeserialize.indexOf(':');
-        return BEncode._toDeserialize.substr(delimeterIndex + 1);
-      }
+    var retValue = this._toDeserialize.substr(1, this._toDeserialize.length - 2);
+    return Number(retValue).valueOf();
+  } else {
+
+    var delimeterIndex = this._toDeserialize.indexOf(':');
+    return this._toDeserialize.substr(delimeterIndex + 1);
+  }
+};
+
+BEncode.prototype.listDecode = function() {
+  'use strict';
+
+  var toReturn = [];
+  do {
+
+    var subElementStartsWith = this._toDeserialize.substr(0, 1);
+    if (subElementStartsWith === 'l') {
+
+      this._toDeserialize = this._toDeserialize.substr(1);
+      toReturn.push(this.listDecode());
+    } else if (subElementStartsWith === 'd') {
+
+      this._toDeserialize = this._toDeserialize.substr(1);
+      toReturn.push(this.mapDecode());
+    } else if (subElementStartsWith === 'i') {
+
+      var numberValue = this.integerDecode();
+      toReturn.push(Number(numberValue[1]).valueOf());
+      this._toDeserialize = this._toDeserialize.substr(numberValue[0].length);
     } else {
 
-      throw 'To deserialize value must be provided.';
+      var toDecode = this.stringLengthVar.exec(this._toDeserialize)[1];
+      var stringValue = this.stringDecode(toDecode);
+      toReturn.push(stringValue);
     }
-  };
+  } while(this._toDeserialize.match(this.onlyEs) === null &&
+    this._toDeserialize !== '');
 
-  return {
+  this._toDeserialize = this._toDeserialize.substr(1);
+  return toReturn;
+};
 
-    decode : decode,
-    encode : encode
-  };
-})();
+BEncode.prototype.mapDecode = function() {
+  'use strict';
+
+  var toReturn = {};
+  do {
+
+    var tmpKey
+      , tmpValue
+      , subElementStartsWith = this._toDeserialize.substr(0, 1)
+      , numberValue
+      , toDecode
+      , stringValue;
+    if (subElementStartsWith === 'l') {
+
+      this._toDeserialize = this._toDeserialize.substr(1);
+      tmpKey = this.listDecode();
+    } else if (subElementStartsWith === 'd') {
+
+      this._toDeserialize = this._toDeserialize.substr(1);
+      tmpKey = this.mapDecode();
+    } else if (subElementStartsWith === 'i') {
+
+      numberValue = this.integerDecode();
+      tmpKey = Number(numberValue[1]).valueOf();
+      this._toDeserialize = this._toDeserialize.substr(numberValue[0].length);
+    } else {
+
+      toDecode = this.stringLengthVar.exec(this._toDeserialize)[1];
+      stringValue = this.stringDecode(toDecode);
+      tmpKey = stringValue;
+    }
+
+    subElementStartsWith = this._toDeserialize.substr(0, 1);
+    if (subElementStartsWith === 'l') {
+
+      this._toDeserialize = this._toDeserialize.substr(1);
+      tmpValue = this.listDecode();
+    } else if (subElementStartsWith === 'd') {
+
+      this._toDeserialize = this._toDeserialize.substr(1);
+      tmpValue = this.mapDecode();
+    } else if (subElementStartsWith === 'i') {
+
+      numberValue = this.integerDecode();
+      tmpValue = Number(numberValue[1]).valueOf();
+      this._toDeserialize = this._toDeserialize.substr(numberValue[0].length);
+    } else {
+
+      toDecode = this.stringLengthVar.exec(this._toDeserialize)[1];
+      stringValue = this.stringDecode(toDecode);
+      tmpValue = stringValue;
+    }
+
+    toReturn[tmpKey] = tmpValue;
+  } while(this._toDeserialize.match(this.onlyEs) === null &&
+    this._toDeserialize !== '');
+
+  this._toDeserialize = this._toDeserialize.substr(1);
+  return toReturn;
+};
+
+BEncode.prototype.integerDecode = function() {
+  'use strict';
+
+  var integerForm = /i(\d+|-\d+)e/;
+  var numberValue = integerForm.exec(this._toDeserialize);
+  return numberValue;
+};
+
+BEncode.prototype.stringDecode = function(stringLength) {
+  'use strict';
+
+  var numStringLength = Number(stringLength).valueOf()
+    , stringLengthDelimiter = stringLength.split('').length + 1
+    , toReturn = this._toDeserialize.substr(stringLengthDelimiter, numStringLength);
+  this._toDeserialize = this._toDeserialize.substr(numStringLength + stringLengthDelimiter);
+  return toReturn;
+};

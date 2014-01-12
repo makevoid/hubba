@@ -5,9 +5,7 @@
 <body>
   <div id="main-content">
     <input onchange="torrentArrived(this.files)" type="file" accept="application/x-bittorrent" id="torrentFileChooser" name="torrentFile[]" multiple>
-    <!-- <input onchange="addFiles(this.files)" type="file" id="files" name="files[]" multiple> -->
   </div>
-  <!-- <script type="text/javascript" src="files.js"></script> -->
   <script type="text/javascript" src="bencoding.js"></script>
   <script type="text/javascript" src="randomness.js"></script>
   <script type="text/javascript" src="SHA1.js"></script>
@@ -25,7 +23,7 @@
 
         if (event.target.readyState == FileReader.DONE) {
           var valueFromFile = event.target.result;
-          var ret = BEncode.decode(valueFromFile);
+          var ret = new BEncode(valueFromFile).decode();
           var bEncoded = BEncode.encode(ret.info);
 
           var info_hash = SHA1.SHA1(bEncoded);

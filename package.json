@@ -14,7 +14,10 @@
     "type": "git",
     "url": "git://github.com/wouldgo/hubba.git"
   },
-  "license": "GPL-2.0",
+  "license" : "GPL-2.0",
+  "dependencies" : {
+    "twofish" : "0.1.1"
+  },
   "devDependencies": {
     "grunt": "~0.4.*",
     "grunt-contrib-jshint": "~0.6.*",

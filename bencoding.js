@@ -109,7 +109,7 @@ window.BEncode = (function() {
   };
 
   var encode = function(element) {
-    if (element) {
+    if (element !== undefined) {
 
       var typeVal = toString.call(element)
         , toReturn;

@@ -23,6 +23,7 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
+          'SHA1.js',
           'randomness.js',
           'bencoding.js'
         ]

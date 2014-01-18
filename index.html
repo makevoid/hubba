@@ -21,7 +21,7 @@
 
       reader.onloadend = function(event) {
 
-        if (event.target.readyState == FileReader.DONE) {
+        if (event.target.readyState === FileReader.DONE) {
           var valueFromFile = event.target.result;
           var ret = new BEncode(valueFromFile).decode();
           var bEncoded = BEncode.encode(ret.info);

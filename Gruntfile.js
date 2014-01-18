@@ -27,17 +27,23 @@ module.exports = function(grunt) {
           'randomness.js',
           'bencoding.js'
         ]
-      }//,
-      //test: {
-      //  src: ['spec/**/*.js']
-      //}
+      },
+      test: {
+        src: ['spec/**.js']
+      }
     },
-    //jasmine : {
-    //  src : first.js',
-    //  options : {
-    //    specs : 'spec/**/*.js'
-    //  }
-    //},
+    jasmine: {
+      src: [
+        'SHA1.js',
+        'bencoding.js'
+      ],
+      options: {
+        specs: [
+          'spec/SHA1.js',
+          'spec/bencoding.js'
+        ]
+      }
+    }//,
     //uglify: {
     //  options: {
     //    report: 'gzip',
@@ -61,8 +67,8 @@ module.exports = function(grunt) {
 
   // Default tasks (when type grunt on terminal).
   grunt.registerTask('default', [
-    'jshint'//,
-    //'jasmine',
+    'jshint',
+    'jasmine',
     //'uglify'
   ]);
 };

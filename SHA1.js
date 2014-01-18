@@ -126,7 +126,7 @@ window.SHA1 = (function() {
           return hex(a) + hex(b) + hex(c) + hex(d) + hex(e);
         } else {
 
-          return '';
+          return 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
         }
       };
 

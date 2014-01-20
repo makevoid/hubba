@@ -23,9 +23,9 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
-          'SHA1.js',
-          'randomness.js',
-          'bencoding.js'
+          'src/SHA1.js',
+          'src/randomness.js',
+          'src/bencoding.js'
         ]
       },
       test: {
@@ -34,8 +34,8 @@ module.exports = function(grunt) {
     },
     jasmine: {
       src: [
-        'SHA1.js',
-        'bencoding.js'
+        'src/SHA1.js',
+        'src/bencoding.js'
       ],
       options: {
         specs: [

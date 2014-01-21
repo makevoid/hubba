@@ -20,7 +20,7 @@ module.exports = function(grunt) {
       site: 'src/www',
       app: 'src/srv',
       frontEndServerPort: 8000,
-      backEndServerPort: 4000
+      backEndServerPort: 3000
     },
     jshint: {
       options: {
@@ -31,7 +31,7 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
-          '<%= confs.app %>/node-app.js',
+          '<%= confs.app %>/index.js',
 
           '<%= confs.site %>/SHA1.js',
           '<%= confs.site %>/randomness.js',
@@ -65,17 +65,19 @@ module.exports = function(grunt) {
     },
     express: {
       options: {
-        port: '<%= confs.backEndServerPort %>'
+        port: '<%= confs.backEndServerPort %>',
+        script: '<%= confs.app %>/index.js'
       },
       dev: {
         options: {
-          //debug: true,
-          script: '<%= confs.app %>/node-app.js'
+          debug: true,
+          /* jshint -W106 */
+          node_env: 'development'
+          /* jshint +W106 */
         }
       },
       prod: {
         options: {
-          script: '<%= confs.app %>/node-app.js',
           /* jshint -W106 */
           node_env: 'production'
           /* jshint +W106 */
@@ -83,20 +85,26 @@ module.exports = function(grunt) {
       },
       test: {
         options: {
-          script: '<%= confs.appSpec %>'
+          script: '<%= conf.appSpec %>/**/*.js'
         }
       }
     },
     watch: {
       express: {
-        files:  [ '<%= confs.app %>/**/*.js' ],
-        tasks:  [ 'express:dev' ],
+        files: [
+          '<%= confs.app %>/**/*.js'
+        ],
+        tasks: [
+          'express:dev:stop',
+          'jshint',
+          'express:dev'
+        ],
         options: {
-          // Without this option specified express won't be reloaded
           spawn: false
         }
       }
-    }//,
+    }
+    //,
     //uglify: {
     //  options: {
     //    report: 'gzip',

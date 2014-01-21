@@ -14,6 +14,14 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    confs: {
+      siteSpec: 'spec/www',
+      appSpec: 'spec/app',
+      site: 'src/www',
+      app: 'src/srv',
+      frontEndServerPort: 8000,
+      backEndServerPort: 4000
+    },
     jshint: {
       options: {
         jshintrc: '.jshintrc'
@@ -23,25 +31,70 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
-          'src/SHA1.js',
-          'src/randomness.js',
-          'src/bencoding.js'
+          '<%= confs.app %>/node-app.js',
+
+          '<%= confs.site %>/SHA1.js',
+          '<%= confs.site %>/randomness.js',
+          '<%= confs.site %>/bencoding.js'
         ]
       },
       test: {
-        src: ['spec/**.js']
+        src: ['<%= confs.siteSpec %>/**.js']
       }
     },
     jasmine: {
       src: [
-        'src/SHA1.js',
-        'src/bencoding.js'
+        '<%= confs.site %>/SHA1.js',
+        '<%= confs.site %>/bencoding.js'
       ],
       options: {
         specs: [
-          'spec/SHA1.js',
-          'spec/bencoding.js'
+          '<%= confs.siteSpec %>/SHA1.js',
+          '<%= confs.siteSpec %>/bencoding.js'
         ]
+      }
+    },
+    connect: {
+      server: {
+        options: {
+          port: '<%= confs.frontEndServerPort %>',
+          keepalive: true,
+          base: '<%= confs.site %>'
+        }
+      }
+    },
+    express: {
+      options: {
+        port: '<%= confs.backEndServerPort %>'
+      },
+      dev: {
+        options: {
+          //debug: true,
+          script: '<%= confs.app %>/node-app.js'
+        }
+      },
+      prod: {
+        options: {
+          script: '<%= confs.app %>/node-app.js',
+          /* jshint -W106 */
+          node_env: 'production'
+          /* jshint +W106 */
+        }
+      },
+      test: {
+        options: {
+          script: '<%= confs.appSpec %>'
+        }
+      }
+    },
+    watch: {
+      express: {
+        files:  [ '<%= confs.app %>/**/*.js' ],
+        tasks:  [ 'express:dev' ],
+        options: {
+          // Without this option specified express won't be reloaded
+          spawn: false
+        }
       }
     }//,
     //uglify: {
@@ -63,12 +116,22 @@ module.exports = function(grunt) {
   // NPM Tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
+  grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-express-server');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   // Default tasks (when type grunt on terminal).
   grunt.registerTask('default', [
     'jshint',
     'jasmine',
+    'connect'
     //'uglify'
+  ]);
+
+  grunt.registerTask('server', [
+    'jshint',
+    'express:dev',
+    'watch'
   ]);
 };

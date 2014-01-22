@@ -1,44 +1,20 @@
-<html>
+<!doctype html>
+<html ng-app="hubba-node">
 <head>
 <title>Filefy</title>
 </head>
 <body>
   <div id="main-content">
-    <input onchange="torrentArrived(this.files)" type="file" accept="application/x-bittorrent" id="torrentFileChooser" name="torrentFile[]" multiple>
+    <input type="file" accept="application/x-bittorrent" id="torrentFileChooser"
+      ng-controller="TorrentFileUploadController" onchange="angular.element(this).scope().torrentArrived(this.files)" multiple>
   </div>
-  <script type="text/javascript" src="bencoding.js"></script>
-  <script type="text/javascript" src="randomness.js"></script>
-  <script type="text/javascript" src="SHA1.js"></script>
+  <script type="text/javascript" src="assets/randomness.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js"></script>
+  <script type="text/javascript" src="assets/index.js"></script>
   <script type="text/javascript">
     (function() {
       console.log(nodeID);
     })();
-
-    var torrentArrived = function(files) {
-
-      var reader = new FileReader()
-        , blob = undefined;
-
-      reader.onloadend = function(event) {
-
-        if (event.target.readyState === FileReader.DONE) {
-          var valueFromFile = event.target.result;
-          var ret = new BEncode(valueFromFile).decode();
-          var bEncoded = BEncode.encode(ret.info);
-
-          var info_hash = SHA1.SHA1(bEncoded);
-
-          console.log('metadata', ret);
-          console.log('info_hash', info_hash);
-        }
-      }
-
-      for (var i = files.length - 1; i >= 0; i--) {
-
-        blob = files[i].slice();
-        reader.readAsBinaryString(blob);
-      }
-    };
   </script>
 </body>
 </html>

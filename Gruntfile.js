@@ -33,9 +33,10 @@ module.exports = function(grunt) {
         src: [
           '<%= confs.app %>/index.js',
 
-          '<%= confs.site %>/SHA1.js',
-          '<%= confs.site %>/randomness.js',
-          '<%= confs.site %>/bencoding.js'
+          '<%= confs.site %>/assets/index.js',
+          '<%= confs.site %>/assets/SHA1.js',
+          '<%= confs.site %>/assets/randomness.js',
+          '<%= confs.site %>/assets/bencoding.js'
         ]
       },
       test: {
@@ -44,8 +45,8 @@ module.exports = function(grunt) {
     },
     jasmine: {
       src: [
-        '<%= confs.site %>/SHA1.js',
-        '<%= confs.site %>/bencoding.js'
+        '<%= confs.site %>/assets/SHA1.js',
+        '<%= confs.site %>/assets/bencoding.js'
       ],
       options: {
         specs: [
@@ -90,6 +91,18 @@ module.exports = function(grunt) {
       }
     },
     watch: {
+      feDev: {
+        files: [
+          '<%= confs.site %>/**/*'
+        ],
+        tasks: [
+          'jshint',
+          'jasmine'
+        ],
+        options: {
+          spawn: false
+        }
+      },
       express: {
         files: [
           '<%= confs.app %>/**/*.js'
@@ -133,7 +146,8 @@ module.exports = function(grunt) {
   grunt.registerTask('default', [
     'jshint',
     'jasmine',
-    'connect'
+    'watch:feDev'
+    //XXX try to deal with a 'magic' whole file // 'connect'
     //'uglify'
   ]);
 

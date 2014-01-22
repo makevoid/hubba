@@ -19,5 +19,8 @@
   "strict": true,
   "trailing" :true,
   "node": true,
-  "browser": true
+  "browser": true,
+  "globals": {
+    "angular": false
+  }
 }

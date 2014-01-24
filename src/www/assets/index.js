@@ -3,9 +3,45 @@
 
   angular.module('hubba-node', [])
 
-  .run(['$rootScope', 'NodeIdentifier', function($rootScope, nodeIdentifier) {
+  .run(['$window', '$rootScope', 'NodeIdentifier', function($window, $rootScope, nodeIdentifier) {
 
     $rootScope.nodeId = nodeIdentifier;
+
+    $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
+
+    var msgToSend = function(msg) {
+        var candidateJson = JSON.stringify(msg);
+        //http put candidateJson
+      },
+      sdpCreated = function(sdp) { // send SDP to peer
+        peer.setLocalDescription(sdp);
+        msgToSend(sdp);
+      }
+
+    var configuration = {
+        'iceServers': [
+          {
+            'url': 'stun:stun.l.google.com:19302'
+          },
+          {
+            'url': 'stun:stunserver.org'
+          }
+        ]
+      }
+      , mediaConstraints = { optional: [
+          {
+            RtpDataChannels: true
+          }
+        ]};
+
+    var peer = new $window.RTCPeerConnection(configuration, mediaConstraints);
+    var bootstapChannel = peer.createDataChannel("bootstap-channel", {reliable: false});
+    localPeerConnection.onicecandidate = function(event) {
+      if (event.candidate) {
+        remotePeerConnection.addIceCandidate(event.candidate);
+        trace('Local ICE candidate: \n' + event.candidate.candidate);
+      }
+    };
   }])
 
   .factory('NodeIdentifier', ['$window', function($window) {
@@ -367,14 +403,14 @@
       reader.onloadend = function(event) {
 
         if (event.target.readyState === FileReader.DONE) {
+
           var valueFromFile = event.target.result;
           var ret = new BencodeService(valueFromFile).decode();
           var bEncoded = BencodeService.encode(ret.info);
-
-          var infoHash = SHA1Service.SHA1(bEncoded);
+          var infoHashed = SHA1Service.SHA1(bEncoded);
 
           console.log('metadata', ret);
-          console.log('info_hash', infoHash);
+          console.log('info_hash', infoHashed);
         }
       };
 

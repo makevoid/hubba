@@ -45,13 +45,14 @@ module.exports = function(grunt) {
     },
     jasmine: {
       src: [
-        '<%= confs.site %>/assets/SHA1.js',
-        '<%= confs.site %>/assets/bencoding.js'
+        'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js',
+        'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-mocks.js',
+        '<%= confs.site %>/assets/index.js'
       ],
       options: {
         specs: [
-          '<%= confs.siteSpec %>/SHA1.js',
-          '<%= confs.siteSpec %>/bencoding.js'
+          '<%= confs.siteSpec %>/SHA1.js'/*,
+          '<%= confs.siteSpec %>/bencoding.js'*/
         ]
       }
     },
@@ -59,8 +60,12 @@ module.exports = function(grunt) {
       server: {
         options: {
           port: '<%= confs.frontEndServerPort %>',
-          keepalive: true,
           base: '<%= confs.site %>'
+        }
+      },
+      keepalive: {
+        options: {
+          keepalive: true
         }
       }
     },
@@ -103,7 +108,7 @@ module.exports = function(grunt) {
           spawn: false
         }
       },
-      express: {
+      beDev: {
         files: [
           '<%= confs.app %>/**/*.js'
         ],
@@ -114,6 +119,17 @@ module.exports = function(grunt) {
         ],
         options: {
           spawn: false
+        }
+      }
+    },
+    'node-inspector': {
+      dev: {
+        options: {
+          'web-port': 1337,
+          'web-host': 'localhost',
+          'debug-port': 5858,
+          'save-live-edit': true,
+          'stack-trace-limit': 4
         }
       }
     }
@@ -141,19 +157,25 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-express-server');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-node-inspector');
 
   // Default tasks (when type grunt on terminal).
   grunt.registerTask('default', [
     'jshint',
     'jasmine',
-    'watch:feDev'
-    //XXX try to deal with a 'magic' whole file // 'connect'
+    // WANT TO KEEP A SINGLE FILE W/O SERVING THIS 'connect:server',
+    'watch:feDev'//,
     //'uglify'
+    // WANT TO KEEP A SINGLE FILE W/O SERVING THIS 'connect:keepalive'
   ]);
 
   grunt.registerTask('server', [
     'jshint',
     'express:dev',
-    'watch'
+    'watch:beDev'
+  ]);
+
+  grunt.registerTask('node-debug', [
+    'node-inspector:dev'
   ]);
 };

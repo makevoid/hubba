@@ -1,19 +1,22 @@
 'use strict';
 
-/* global describe:false,
+/* global
+    describe:false,
     beforeEach: false,
     it: false,
     expect: false,
-    hubbaNode: false
+    inject: false
 */
 
 describe('SHA1', function() {
   console.info(' - Start SHA1 Tests - ');
-  beforeEach(module('hubbaNode'));
+  beforeEach(module('HubbaNode'));
 
-  it('should have a SHA1 service', function() {
-    expect(hubbaNode.SHA1).toBeDefined();
-  });
+  it('should have a SHA1 service', inject(function(SHA1) {
+
+
+    expect(SHA1).toBeDefined();
+  }));
 
   /*it('SHA1 empty string', function() {
     var sha1ed = SHA1.SHA1('');

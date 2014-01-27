@@ -1,7 +1,7 @@
 (function(angular) {
   'use strict';
 
-  angular.module('hubbaNode', [])
+  angular.module('HubbaNode', [])
 
   /*.config(['$httpProvider', function($httpProvider) {
 
@@ -87,7 +87,7 @@
   .factory('NodeIdentifier', ['$window', function($window) {
     return (function() {
       var theRandomValue = ''
-        , randomValues = new Uint8ClampedArray(20);
+        , randomValues = new $window.Uint8ClampedArray(20);
       $window.crypto.getRandomValues(randomValues);
 
       for (var aRandomValueIndex = randomValues.length - 1; aRandomValueIndex >= 0; aRandomValueIndex -= 1) {
@@ -109,7 +109,7 @@
     })();
   }])
 
-  .factory('SHA1', function() {
+  .factory('SHA1', [function() {
     var hexChars = '0123456789abcdef'
       , bitsInUTF8 = 8
       , hex = function(number) {
@@ -244,7 +244,7 @@
       SHA1FromByte : SHA1FromByte,
       SHA1 : SHA1
     };
-  })
+  }])
 
   .factory('BEncode', ['$window', function($window) {
     var BEncode = function(toDeserialize) {

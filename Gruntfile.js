@@ -45,11 +45,13 @@ module.exports = function(grunt) {
     },
     jasmine: {
       src: [
-        'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js',
-        'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-mocks.js',
         '<%= confs.site %>/assets/index.js'
       ],
       options: {
+        vendor: [
+          'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js',
+          'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-mocks.js'
+        ],
         specs: [
           '<%= confs.siteSpec %>/SHA1.js'/*,
           '<%= confs.siteSpec %>/bencoding.js'*/

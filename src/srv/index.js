@@ -1,7 +1,6 @@
 (function() {
   'use strict';
   var COMMA_SPACE = ', '
-    , ANY_HOST = '*'
     , CORS_ACAC = 'Access-Control-Allow-Credentials'
     , CORS_ACAO = 'Access-Control-Allow-Origin'
     , CORS_ACAM = 'Access-Control-Allow-Methods'
@@ -37,7 +36,7 @@
     , jwt = require('express-jwt')
     , app = express()
     , allowCrossDomain = function(req, res, next) {
-        res.header(CORS_ACAO, ANY_HOST);
+        res.header(CORS_ACAO, req.headers.origin);
         res.header(CORS_ACAC, true);
         res.header(CORS_ACAM, ALLOWED_METHODS);
         res.header(CORS_ACAH, ALLOWED_HEADERS);

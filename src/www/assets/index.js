@@ -3,14 +3,18 @@
 
   angular.module('HubbaNode', [])
 
-  /*.config(['$httpProvider', function($httpProvider) {
+  .config(['$httpProvider', function($httpProvider) {
 
-  }])*/
+    $httpProvider.defaults.withCredentials = true;
+    //$httpProvider.defaults.headers.common.Origin = 'HubbaNode';
+  }])
 
-  .run(['$window', '$rootScope', '$http', 'NodeIdentifier', function($window, $rootScope, $http, nodeIdentifier) {
+  .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
     $rootScope.nodeIdentifier = nodeIdentifier;
-    $rootScope.bootstrapServer = '0.0.0.0:3000';
+    $rootScope.bootstrapServer = 'http://0.0.0.0:3000';
 
+    //console.log($httpProvider);
+    
     var storeSessionForNode = function(data, status, headers, config) {
         console.log(data, '\n', status, '\n', headers, '\n', config);
         $window.sessionStorage.token = data.token;
@@ -23,8 +27,7 @@
     $http({
       'method': 'POST',
       'url': $rootScope.bootstrapServer + '/auth',
-      'data': $rootScope.nodeIdentifier,
-      'withCredentials': true
+      'data': $rootScope.nodeIdentifier
     })
     .success(storeSessionForNode)
     .error(deleteSessionForNode);

@@ -6,7 +6,6 @@
   .config(['$httpProvider', function($httpProvider) {
 
     $httpProvider.defaults.withCredentials = true;
-    //$httpProvider.defaults.headers.common.Origin = 'HubbaNode';
   }])
 
   .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
@@ -90,7 +89,7 @@
   .factory('NodeIdentifier', ['$window', function($window) {
     return (function() {
       var theRandomValue = ''
-        , randomValues = new $window.Uint8ClampedArray(20);
+        , randomValues = new $window.Uint8Array(20);
       $window.crypto.getRandomValues(randomValues);
 
       for (var aRandomValueIndex = randomValues.length - 1; aRandomValueIndex >= 0; aRandomValueIndex -= 1) {

@@ -10,13 +10,13 @@
 
 describe('SHA1', function() {
   console.info(' - Start SHA1 Tests - ');
-  beforeEach(module('HubbaNode'));
+  beforeEach(angular.mock.module('HubbaNode'));
 
-  it('should have a SHA1 service', inject(function(SHA1) {
+  it('should have a SHA1 service', inject(['SHA1', function(SHA1) {
 
 
     expect(SHA1).toBeDefined();
-  }));
+  }]));
 
   /*it('SHA1 empty string', function() {
     var sha1ed = SHA1.SHA1('');

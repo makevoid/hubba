@@ -3,87 +3,22 @@
 
   angular.module('HubbaNode', [])
 
-  .config(['$httpProvider', function($httpProvider) {
-
-    $httpProvider.defaults.withCredentials = true;
-  }])
-
-  .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
-    $rootScope.nodeIdentifier = nodeIdentifier;
-    $rootScope.bootstrapServer = 'http://0.0.0.0:3000';
-
-    //console.log($httpProvider);
-    
-    var storeSessionForNode = function(data, status, headers, config) {
-        console.log(data, '\n', status, '\n', headers, '\n', config);
-        $window.sessionStorage.token = data.token;
-      }
-      , deleteSessionForNode = function (data, status, headers, config) {
-        console.log(data, '\n', status, '\n', headers, '\n', config);
-        delete $window.sessionStorage.token;
-      };
-
-    $http({
-      'method': 'POST',
-      'url': $rootScope.bootstrapServer + '/auth',
-      'data': $rootScope.nodeIdentifier
-    })
-    .success(storeSessionForNode)
-    .error(deleteSessionForNode);
-
-    $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
-
-    var configuration = {
-        'iceServers': [
-          {'url': 'stun:stun.l.google.com:19302'},
-          {'url': 'stun:stunserver.org'}
-        ]
+  .factory('authInterceptor', ['$rootScope', '$q', '$window', function($rootScope, $q, $window) {
+    return {
+      request: function (config) {
+        config.headers = config.headers || {};
+        if ($window.sessionStorage.token) {
+          config.headers.Authorization = 'Bearer ' + $window.sessionStorage.token;
+        }
+        return config;
       },
-      mediaConstraints = {
-        optional: [
-          {
-            RtpDataChannels: true
-          }
-        ]
-      }
-      , sendLocalDescription = function(desc) {
-          peer.setLocalDescription(desc);
-          //http put desc
-          //remotePeerConnection.setRemoteDescription(desc);
-          //remotePeerConnection.createAnswer(gotRemoteDescription);
-        };
-
-    var peer = new $window.RTCPeerConnection(configuration, mediaConstraints);
-    var bootstapChannel = peer.createDataChannel('bootstap-channel', {reliable: false});
-    peer.onicecandidate = function(event) {
-      if (event.candidate) {
-        console.log();
-        //var candidateJson = JSON.stringify(event.candidate);
-        //console.log(candidateJson);
-        //http put candidateJson
+      response: function (response) {
+        /*if (response.status === 401) {
+          // handle the case where the user is not authenticated
+        }*/
+        return response || $q.when(response);
       }
     };
-
-    bootstapChannel.onopen = function() {
-      console.log('OPEN');
-      /*if (sendChannel.readyState == "open") {
-        dataChannelSend.disabled = false;
-        dataChannelSend.focus();
-        dataChannelSend.placeholder = "";
-        sendButton.disabled = false;
-        closeButton.disabled = false;
-      } else {
-        dataChannelSend.disabled = true;
-        sendButton.disabled = true;
-        closeButton.disabled = true;
-      }*/
-    };
-
-    bootstapChannel.onclose = function() {
-      console.log('CLOSE');
-    };
-
-    peer.createOffer(sendLocalDescription);
   }])
 
   .factory('NodeIdentifier', ['$window', function($window) {
@@ -462,5 +397,84 @@
         reader.readAsBinaryString(blob);
       }
     };
+  }])
+
+  .config(['$httpProvider', function($httpProvider) {
+    $httpProvider.defaults.withCredentials = true;
+    $httpProvider.interceptors.push('authInterceptor');
+  }])
+
+  .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
+    $rootScope.nodeIdentifier = nodeIdentifier;
+    $rootScope.bootstrapServer = 'http://0.0.0.0:3000';
+
+    var storeSessionForNode = function(data) {
+        $window.sessionStorage.token = data.token;
+      }
+      , deleteSessionForNode = function () {
+        delete $window.sessionStorage.token;
+      };
+
+    $http({
+      'method': 'POST',
+      'url': $rootScope.bootstrapServer + '/auth',
+      'data': {'nodeIdentifier': $rootScope.nodeIdentifier}
+    })
+    .success(storeSessionForNode)
+    .error(deleteSessionForNode);
+
+    $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
+
+    var configuration = {
+        'iceServers': [
+          {'url': 'stun:stun.l.google.com:19302'},
+          {'url': 'stun:stunserver.org'}
+        ]
+      },
+      mediaConstraints = {
+        optional: [
+          {
+            RtpDataChannels: true
+          }
+        ]
+      }
+      , sendLocalDescription = function(desc) {
+          peer.setLocalDescription(desc);
+          //http put desc
+          //remotePeerConnection.setRemoteDescription(desc);
+          //remotePeerConnection.createAnswer(gotRemoteDescription);
+        };
+
+    var peer = new $window.RTCPeerConnection(configuration, mediaConstraints);
+    var bootstapChannel = peer.createDataChannel('bootstap-channel', {reliable: false});
+    peer.onicecandidate = function(event) {
+      if (event.candidate) {
+        console.log();
+        //var candidateJson = JSON.stringify(event.candidate);
+        //console.log(candidateJson);
+        //http put candidateJson
+      }
+    };
+
+    bootstapChannel.onopen = function() {
+      console.log('OPEN');
+      /*if (sendChannel.readyState == "open") {
+        dataChannelSend.disabled = false;
+        dataChannelSend.focus();
+        dataChannelSend.placeholder = "";
+        sendButton.disabled = false;
+        closeButton.disabled = false;
+      } else {
+        dataChannelSend.disabled = true;
+        sendButton.disabled = true;
+        closeButton.disabled = true;
+      }*/
+    };
+
+    bootstapChannel.onclose = function() {
+      console.log('CLOSE');
+    };
+
+    peer.createOffer(sendLocalDescription);
   }]);
-})(angular);
+})(window.angular);

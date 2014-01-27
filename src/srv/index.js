@@ -33,7 +33,8 @@
 
   var crypto = require('crypto')
     , express = require('express')
-    , jwt = require('express-jwt')
+    , jwt = require('jsonwebtoken')
+    , expressJwt = require('express-jwt')
     , app = express()
     , allowCrossDomain = function(req, res, next) {
         res.header(CORS_ACAO, req.headers.origin);
@@ -61,12 +62,12 @@
    *
    */
   app.disable('x-powered-by');
-  app.use('/peer', jwt({
+  app.use('/peer', expressJwt({
     secret: nodeIdentifier
   }));
-  /*app.use(express.json());
-  app.use(express.urlencoded());*/
   app.use(allowCrossDomain);
+  app.use(express.urlencoded());
+  app.use(express.json());
 
   /**
    *
@@ -74,25 +75,14 @@
    *
    */
   app.post('/auth', function (req, res) {
-    res.send(OK, 'aaa');
-/*    if (!(req.body.username === 'john.doe' && req.body.password === 'foobar')) {
-      res.send(401, 'Wrong user or password');
-      return;
-    }
+    var externalNodeIdentifier = req.body.nodeIdentifier
+      , expires = 60
+      , token = jwt.sign(externalNodeIdentifier, nodeIdentifier, { expiresInMinutes: expires });
 
-    var profile = {
-      first_name: 'John',
-      last_name: 'Doe',
-      email: 'john@doe.com',
-      id: 123
-    };
-
-    var token = jwt.sign('clientNodeIdentifier',
-      nodeIdentifier, {
-        expiresInMinutes: 60*5
-      });
-
-    res.json({ token: token });*/
+    res.json({
+      token: token,
+      expiresInMinutes : expires
+    });
   });
 
 

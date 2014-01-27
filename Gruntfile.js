@@ -31,6 +31,8 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
+          'spec/RTCPeerConnection.js',
+
           '<%= confs.app %>/index.js',
 
           '<%= confs.site %>/assets/index.js',
@@ -51,6 +53,9 @@ module.exports = function(grunt) {
         vendor: [
           'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js',
           'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-mocks.js'
+        ],
+        helpers: [
+          'spec/RTCPeerConnection.js'
         ],
         specs: [
           '<%= confs.siteSpec %>/SHA1.js'/*,

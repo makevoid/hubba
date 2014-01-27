@@ -21,6 +21,10 @@
   "node": true,
   "browser": true,
   "globals": {
-    "angular": false
+      "describe":false,
+      "beforeEach": false,
+      "it": false,
+      "expect": false,
+      "inject": false
   }
 }

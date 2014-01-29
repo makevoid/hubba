@@ -3,24 +3,6 @@
 
   angular.module('HubbaNode', [])
 
-  .factory('authInterceptor', ['$rootScope', '$q', '$window', function($rootScope, $q, $window) {
-    return {
-      request: function (config) {
-        config.headers = config.headers || {};
-        if ($window.sessionStorage.token) {
-          config.headers.Authorization = 'Bearer ' + $window.sessionStorage.token;
-        }
-        return config;
-      },
-      response: function (response) {
-        /*if (response.status === 401) {
-          // handle the case where the user is not authenticated
-        }*/
-        return response || $q.when(response);
-      }
-    };
-  }])
-
   .factory('NodeIdentifier', ['$window', function($window) {
     return (function() {
       var theRandomValue = ''
@@ -401,7 +383,6 @@
 
   .config(['$httpProvider', function($httpProvider) {
     $httpProvider.defaults.withCredentials = true;
-    $httpProvider.interceptors.push('authInterceptor');
   }])
 
   .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
@@ -417,7 +398,7 @@
 
     $http({
       'method': 'POST',
-      'url': $rootScope.bootstrapServer + '/auth',
+      'url': $rootScope.bootstrapServer + '/',
       'data': {'nodeIdentifier': $rootScope.nodeIdentifier}
     })
     .success(storeSessionForNode)

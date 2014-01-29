@@ -33,8 +33,6 @@
 
   var crypto = require('crypto')
     , express = require('express')
-    , jwt = require('jsonwebtoken')
-    , expressJwt = require('express-jwt')
     , app = express()
     , allowCrossDomain = function(req, res, next) {
         res.header(CORS_ACAO, req.headers.origin);
@@ -62,31 +60,12 @@
    *
    */
   app.disable('x-powered-by');
-  app.use('/peer', expressJwt({
-    secret: nodeIdentifier
-  }));
   app.use(allowCrossDomain);
   app.use(express.urlencoded());
   app.use(express.json());
 
-  /**
-   *
-   * Auth routes
-   *
-   */
-  app.post('/auth', function (req, res) {
-    var externalNodeIdentifier = req.body.nodeIdentifier
-      , expires = 60
-      , token = jwt.sign(externalNodeIdentifier, nodeIdentifier, { expiresInMinutes: expires });
-
-    res.json({
-      token: token,
-      expiresInMinutes : expires
-    });
-  });
-
-
-  app.get('/', function(req, res) {
+  app.post('/', function(req, res) {
+    console.log(req.body);
     res.json({data: nodeIdentifier});
   });
 

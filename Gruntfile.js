@@ -15,9 +15,8 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     confs: {
-      karmaFile: 'spec/karma.conf.js',
       siteSpec: 'spec/www',
-      appSpec: 'spec/app',
+      appSpec: 'spec/srv',
       site: 'src/www',
       app: 'src/srv',
       frontEndServerPort: 8000,
@@ -34,14 +33,15 @@ module.exports = function(grunt) {
         src: [
           '<%= confs.app %>/index.js',
 
-          '<%= confs.site %>/assets/index.js',
-          '<%= confs.site %>/assets/SHA1.js',
-          '<%= confs.site %>/assets/randomness.js',
-          '<%= confs.site %>/assets/bencoding.js'
+          '<%= confs.site %>/assets/index.js'
         ]
       },
       test: {
-        src: ['<%= confs.siteSpec %>/**.js']
+        src: [
+          '<%= confs.appSpec %>/**.js',
+
+          '<%= confs.siteSpec %>/**.js'
+        ]
       }
     },
     karma: {
@@ -55,7 +55,8 @@ module.exports = function(grunt) {
 
           '<%= confs.site %>/assets/index.js',
 
-          '<%= confs.siteSpec %>/SHA1.js'
+          '<%= confs.siteSpec %>/SHA1.js',
+          '<%= confs.siteSpec %>/BEncode.js'
         ],
         exclude: [
         ],
@@ -117,7 +118,7 @@ module.exports = function(grunt) {
       },
       test: {
         options: {
-          script: '<%= conf.appSpec %>/**/*.js'
+          script: '<%= confs.appSpec %>/test.js'
         }
       }
     },

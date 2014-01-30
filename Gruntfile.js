@@ -15,12 +15,13 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     confs: {
+      karmaFile: 'spec/karma.conf.js',
       siteSpec: 'spec/www',
       appSpec: 'spec/app',
       site: 'src/www',
       app: 'src/srv',
       frontEndServerPort: 8000,
-      backEndServerPort: 3000
+      backEndServerPort: 3000,
     },
     jshint: {
       options: {
@@ -31,8 +32,6 @@ module.exports = function(grunt) {
       },
       lib: {
         src: [
-          'spec/RTCPeerConnection.js',
-
           '<%= confs.app %>/index.js',
 
           '<%= confs.site %>/assets/index.js',
@@ -45,22 +44,42 @@ module.exports = function(grunt) {
         src: ['<%= confs.siteSpec %>/**.js']
       }
     },
-    jasmine: {
-      src: [
-        '<%= confs.site %>/assets/index.js'
-      ],
+    karma: {
       options: {
-        vendor: [
+        frameworks: [
+          'jasmine'
+        ],
+        files: [
           'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js',
-          'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-mocks.js'
+          'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-mocks.js',
+
+          '<%= confs.site %>/assets/index.js',
+
+          '<%= confs.siteSpec %>/SHA1.js'
         ],
-        helpers: [
-          'spec/RTCPeerConnection.js'
+        exclude: [
         ],
-        specs: [
-          '<%= confs.siteSpec %>/SHA1.js'/*,
-          '<%= confs.siteSpec %>/bencoding.js'*/
-        ]
+        preprocessors: {
+        },
+        port: 9876,
+        colors: true,
+        autoWatch: false,
+        browsers: [
+          'Firefox',
+          'Chrome'
+        ],
+        captureTimeout: 20000,
+        singleRun: false,
+        reportSlowerThan: 500,
+        plugins: [
+          'karma-jasmine',
+          'karma-chrome-launcher',
+          'karma-firefox-launcher'
+        ],
+        background: true
+      },
+      unit: {
+        reporters: ['dots']
       }
     },
     connect: {
@@ -109,7 +128,7 @@ module.exports = function(grunt) {
         ],
         tasks: [
           'jshint',
-          'jasmine'
+          'karma:unit:run'
         ],
         options: {
           spawn: false
@@ -140,28 +159,12 @@ module.exports = function(grunt) {
         }
       }
     }
-    //,
-    //uglify: {
-    //  options: {
-    //    report: 'gzip',
-    //    banner: banner
-    //  },
-    //  minifyTarget: {
-    //    files: {
-    //      'dist/hubba.min.js': [
-    //        'first.js',
-    //        'second.js'
-    //        ]
-    //    }
-    //  }
-    //}
   });
 
   // NPM Tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-contrib-jasmine');
+  grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-contrib-connect');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-express-server');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-node-inspector');
@@ -169,7 +172,7 @@ module.exports = function(grunt) {
   // Default tasks (when type grunt on terminal).
   grunt.registerTask('default', [
     'jshint',
-    'jasmine',
+    'karma:unit',
     // WANT TO KEEP A SINGLE FILE W/O SERVING THIS 'connect:server',
     'watch:feDev'//,
     //'uglify'

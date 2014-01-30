@@ -456,6 +456,8 @@
       console.log('CLOSE');
     };
 
-    peer.createOffer(sendLocalDescription);
+    peer.createOffer(sendLocalDescription, function() {
+      console.error('fail!');
+    });
   }]);
 })(window.angular);

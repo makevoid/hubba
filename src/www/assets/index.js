@@ -28,7 +28,7 @@
     })();
   }])
 
-  .factory('SHA1', [function() {
+  .factory('SHA1', ['$window', function($window) {
     var hexChars = '0123456789abcdef'
       , bitsInUTF8 = 8
       , hex = function(number) {
@@ -105,7 +105,7 @@
           var string = '';
           for(var i = 0, byteArrayLen = byteArray.length; i < byteArrayLen; i += 1) {
 
-            string += String.fromCharCode(byteArray[i]);
+            string += $window.String.fromCharCode(byteArray[i]);
           }
           return SHA1(string);
         }
@@ -238,7 +238,7 @@
       } else if (startsWith === 'i') {
 
         var retValue = this._toDeserialize.substr(1, this._toDeserialize.length - 2);
-        return Number(retValue).valueOf();
+        return $window.Number(retValue).valueOf();
       } else {
 
         var delimeterIndex = this._toDeserialize.indexOf(':');
@@ -262,7 +262,7 @@
         } else if (subElementStartsWith === 'i') {
 
           var numberValue = this.integerDecode();
-          toReturn.push(Number(numberValue[1]).valueOf());
+          toReturn.push($window.Number(numberValue[1]).valueOf());
           this._toDeserialize = this._toDeserialize.substr(numberValue[0].length);
         } else {
 
@@ -298,7 +298,7 @@
         } else if (subElementStartsWith === 'i') {
 
           numberValue = this.integerDecode();
-          tmpKey = Number(numberValue[1]).valueOf();
+          tmpKey = $window.Number(numberValue[1]).valueOf();
           this._toDeserialize = this._toDeserialize.substr(numberValue[0].length);
         } else {
 
@@ -319,7 +319,7 @@
         } else if (subElementStartsWith === 'i') {
 
           numberValue = this.integerDecode();
-          tmpValue = Number(numberValue[1]).valueOf();
+          tmpValue = $window.Number(numberValue[1]).valueOf();
           this._toDeserialize = this._toDeserialize.substr(numberValue[0].length);
         } else {
 
@@ -343,7 +343,7 @@
     };
 
     BEncode.prototype.stringDecode = function(stringLength) {
-      var numStringLength = Number(stringLength).valueOf()
+      var numStringLength = $window.Number(stringLength).valueOf()
         , stringLengthDelimiter = stringLength.split('').length + 1
         , toReturn = this._toDeserialize.substr(stringLengthDelimiter, numStringLength);
       this._toDeserialize = this._toDeserialize.substr(numStringLength + stringLengthDelimiter);
@@ -353,15 +353,15 @@
     return BEncode;
   }])
 
-  .controller('TorrentFileUploadController', ['$scope', 'SHA1', 'BEncode', function($scope, SHA1Service, BencodeService) {
+  .controller('TorrentFileUploadController', ['$scope', '$window', 'SHA1', 'BEncode', function($scope, $window, SHA1Service, BencodeService) {
     $scope.torrentArrived = function(files) {
 
-      var reader = new FileReader()
+      var reader = new $window.FileReader()
         , blob;
 
       reader.onloadend = function(event) {
 
-        if (event.target.readyState === FileReader.DONE) {
+        if (event.target.readyState === $window.FileReader.DONE) {
 
           var valueFromFile = event.target.result;
           var ret = new BencodeService(valueFromFile).decode();
@@ -389,20 +389,11 @@
     $rootScope.nodeIdentifier = nodeIdentifier;
     $rootScope.bootstrapServer = 'http://0.0.0.0:3000';
 
-    var storeSessionForNode = function(data) {
-        $window.sessionStorage.token = data.token;
-      }
-      , deleteSessionForNode = function () {
-        delete $window.sessionStorage.token;
-      };
-
     $http({
       'method': 'POST',
       'url': $rootScope.bootstrapServer + '/',
       'data': {'nodeIdentifier': $rootScope.nodeIdentifier}
-    })
-    .success(storeSessionForNode)
-    .error(deleteSessionForNode);
+    });
 
     $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
 

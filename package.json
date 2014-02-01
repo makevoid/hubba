@@ -27,7 +27,7 @@
     "grunt-express-server": "~0.4.*",
     "grunt-contrib-watch": "~0.5.*",
     "grunt-node-inspector": "~0.1.*",
-    "grunt-karma": "~0.7.*",
+    "grunt-karma": "~0.6.*",
     "karma-jasmine": "~0.1.*",
     "karma-chrome-launcher": "~0.1.*",
     "karma-firefox-launcher": "~0.1.*"

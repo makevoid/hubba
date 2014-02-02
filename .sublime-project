@@ -2,7 +2,7 @@
   "folders": [
     {
       "path": "./",
-      "follow_symlinks": true
+      "follow_symlinks": false
     }
   ],
   "settings": {
@@ -11,10 +11,6 @@
   "ternjs": {
     "exclude": [
       "node_modules/**"
-    ],
-    "include": [
-      "src/**",
-      "spec/**"
     ],
     "libs": [
       "browser", 

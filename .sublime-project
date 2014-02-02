@@ -1,0 +1,32 @@
+{
+  "folders": [
+    {
+      "path": "./",
+      "follow_symlinks": true
+    }
+  ],
+  "settings": {
+    "tab_size": 2
+  },
+  "ternjs": {
+    "exclude": [
+      "node_modules/**"
+    ],
+    "include": [
+      "src/**",
+      "spec/**"
+    ],
+    "libs": [
+      "browser", 
+      "ecma5"
+    ],
+    "plugins": {
+      "angular": {
+        "baseURL": "./js"
+      },
+      "node": {
+        "baseURL": "./js"
+      }
+    }
+  }
+}

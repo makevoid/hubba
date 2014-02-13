@@ -34,6 +34,7 @@
   var crypto = require('crypto')
     , express = require('express')
     , app = express()
+    , wrtc = require('/home/dario/git/node-webrtc/lib/index')
     , allowCrossDomain = function(req, res, next) {
         res.header(CORS_ACAO, req.headers.origin);
         res.header(CORS_ACAC, true);
@@ -48,12 +49,37 @@
           next();
         }
       }
-    , seed = crypto.randomBytes(20)
-    , nodeIdentifier = crypto
-      .createHash('sha1')
-      .update(seed)
-      .digest('hex');
+    , configuration = { 'iceServers': [
+    {'url': 'stun:stun.l.google.com:19302'},
+    {'url': 'stun:stunserver.org'}
+  ]}
+    , mediaConstraints = { optional: [
+    { RtpDataChannels: true }
+  ]}
+    , nodeIdentifier = (function parseHexString() {
+        var seed = crypto.randomBytes(20)
+          , sha1Value = crypto.createHash('sha1').update(seed).digest('hex')
+          , result = '';
 
+        while (sha1Value.length >= 2) {
+
+          var tmpValue = parseInt(sha1Value.substring(0, 2), 16).toString(2);
+          if (tmpValue.length < 8) {
+
+            var diff = 8 - tmpValue.length;
+            for (var paddingIndex = 0; paddingIndex < diff; paddingIndex += 1) {
+
+              tmpValue = '0' + tmpValue;
+            }
+          }
+          result += tmpValue;
+          sha1Value = sha1Value.substring(2, sha1Value.length);
+        }
+        return result;
+      })();
+
+  var redPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
+    , blackPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints);
   /**
    *
    * Configuration
@@ -65,8 +91,22 @@
   app.use(express.json());
 
   app.post('/', function(req, res) {
-    console.log(req.body);
-    res.json({data: nodeIdentifier});
+    var requesterNodeIdentifier = req.body.nodeIdentifier;
+
+    if(nodeIdentifier.localeCompare(requesterNodeIdentifier) === 0) {
+
+      process.exit(1);
+      throw 'Something very bad happen, two nodes with the same identifier...';
+    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) < 0) {
+      //I'm smaller of requester -> he goes BLACK
+
+      console.log('black!');
+      res.json({response: 'black!'});
+    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0) {
+      //I'm bigger of requester -> he goes RED
+
+      res.json({response: 'red!'});
+    }
   });
 
   app.listen(process.env.PORT, function() {

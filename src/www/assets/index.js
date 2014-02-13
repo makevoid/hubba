@@ -387,7 +387,7 @@
 
   .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
     $rootScope.nodeIdentifier = nodeIdentifier;
-    $rootScope.bootstrapServer = 'http://0.0.0.0:3000';
+    $rootScope.bootstrapServer = 'http://localhost:3000';
 
     $http({
       'method': 'POST',
@@ -402,8 +402,8 @@
           {'url': 'stun:stun.l.google.com:19302'},
           {'url': 'stun:stunserver.org'}
         ]
-      },
-      mediaConstraints = {
+      }
+      , mediaConstraints = {
         optional: [
           {
             RtpDataChannels: true

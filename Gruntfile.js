@@ -142,7 +142,7 @@ module.exports = function(grunt) {
         tasks: [
           'express:dev:stop',
           'jshint',
-          'express:dev'
+          'express:dev:start'
         ],
         options: {
           spawn: false

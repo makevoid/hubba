@@ -17,7 +17,8 @@
   "license": "GPL-2.0",
   "dependencies": {
     "express": "3.4.*",
-    "twofish": "0.1.1"
+    "twofish": "0.1.1",
+    "wrtc": "0.*.*"
   },
   "devDependencies": {
     "grunt": "~0.4.2",

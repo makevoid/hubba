@@ -389,12 +389,6 @@
     $rootScope.nodeIdentifier = nodeIdentifier;
     $rootScope.bootstrapServer = 'http://localhost:3000';
 
-    $http({
-      'method': 'POST',
-      'url': $rootScope.bootstrapServer + '/',
-      'data': {'nodeIdentifier': $rootScope.nodeIdentifier}
-    });
-
     $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
 
     var configuration = {
@@ -405,46 +399,41 @@
       }
       , mediaConstraints = {
         optional: [
-          {
-            RtpDataChannels: true
-          }
+          { RtpDataChannels: true }
         ]
       }
       , sendLocalDescription = function(desc) {
           peer.setLocalDescription(desc);
-          //http put desc
-          //remotePeerConnection.setRemoteDescription(desc);
-          //remotePeerConnection.createAnswer(gotRemoteDescription);
+          /*$http({
+            'method': 'POST',
+            'url': $rootScope.bootstrapServer + '/',
+            'data': {
+              'nodeIdentifier': $rootScope.nodeIdentifier,
+              'description': desc
+            }
+          });*/
         };
 
     var peer = new $window.RTCPeerConnection(configuration, mediaConstraints);
-    var bootstapChannel = peer.createDataChannel('bootstap-channel', {reliable: false});
-    peer.onicecandidate = function(event) {
-      if (event.candidate) {
-        console.log();
-        //var candidateJson = JSON.stringify(event.candidate);
-        //console.log(candidateJson);
-        //http put candidateJson
-      }
-    };
+    var bootstapChannel = peer.createDataChannel('bootstap', { reliable: false });
 
     bootstapChannel.onopen = function() {
       console.log('OPEN');
-      /*if (sendChannel.readyState == "open") {
-        dataChannelSend.disabled = false;
-        dataChannelSend.focus();
-        dataChannelSend.placeholder = "";
-        sendButton.disabled = false;
-        closeButton.disabled = false;
-      } else {
-        dataChannelSend.disabled = true;
-        sendButton.disabled = true;
-        closeButton.disabled = true;
-      }*/
     };
 
     bootstapChannel.onclose = function() {
       console.log('CLOSE');
+    };
+
+    peer.onicecandidate = function(event) {
+
+      console.log('Local ice callback.', event);
+      /*if (event.candidate) {
+
+        //var candidateJson = JSON.stringify(event.candidate);
+        //console.log(candidateJson);
+        //http put candidateJson
+      }*/
     };
 
     peer.createOffer(sendLocalDescription, function() {

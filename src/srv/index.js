@@ -34,7 +34,7 @@
   var crypto = require('crypto')
     , express = require('express')
     , app = express()
-    , wrtc = require('/home/dario/git/node-webrtc/lib/index')
+    , wrtc = require('wrtc')
     , allowCrossDomain = function(req, res, next) {
         res.header(CORS_ACAO, req.headers.origin);
         res.header(CORS_ACAC, true);
@@ -48,14 +48,15 @@
 
           next();
         }
-      }
-    , configuration = { 'iceServers': [
-    {'url': 'stun:stun.l.google.com:19302'},
-    {'url': 'stun:stunserver.org'}
-  ]}
+      };
+
+  var configuration = { 'iceServers': [
+      {'url': 'stun:stun.l.google.com:19302'},
+      {'url': 'stun:stunserver.org'}
+    ]}
     , mediaConstraints = { optional: [
-    { RtpDataChannels: true }
-  ]}
+      { RtpDataChannels: true }
+    ]}
     , nodeIdentifier = (function parseHexString() {
         var seed = crypto.randomBytes(20)
           , sha1Value = crypto.createHash('sha1').update(seed).digest('hex')
@@ -80,6 +81,11 @@
 
   var redPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
     , blackPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints);
+
+  var coolDump = function(a,b,c,d) {
+        console.log(a,b,c,d);
+      };
+
   /**
    *
    * Configuration
@@ -91,7 +97,8 @@
   app.use(express.json());
 
   app.post('/', function(req, res) {
-    var requesterNodeIdentifier = req.body.nodeIdentifier;
+    var requesterNodeIdentifier = req.body.nodeIdentifier
+      , remoteDescription = req.body.description;
 
     if(nodeIdentifier.localeCompare(requesterNodeIdentifier) === 0) {
 
@@ -100,13 +107,29 @@
     } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) < 0) {
       //I'm smaller of requester -> he goes BLACK
 
-      console.log('black!');
-      res.json({response: 'black!'});
+      blackPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription),
+        coolDump,
+        coolDump);
+
+      /*new wrtc.RTCSessionDescription(remoteDescription), function() {
+        console.log('A');
+      }, function() {
+        console.log('B');
+      });
+      blackPeer.createAnswer(function(sdp) {
+
+        res.json(sdp);
+      }, function(a, b, c) {
+        console.log('boom', a, b, c);
+      });*/
     } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0) {
       //I'm bigger of requester -> he goes RED
 
-      res.json({response: 'red!'});
+      redPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription),
+        coolDump,
+        coolDump);
     }
+    res.send(OK);
   });
 
   app.listen(process.env.PORT, function() {

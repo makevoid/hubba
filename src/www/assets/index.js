@@ -390,6 +390,8 @@
     $rootScope.bootstrapServer = 'http://localhost:3000';
 
     $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
+    $window.RTCSessionDescription = $window.mozRTCSessionDescription || $window.webkitRTCSessionDescription;
+    $window.RTCIceCandidate = $window.mozRTCIceCandidate || $window.webkitRTCIceCandidate;
 
     var configuration = {
         'iceServers': [
@@ -399,44 +401,104 @@
       }
       , mediaConstraints = {
         optional: [
-          { RtpDataChannels: true }
         ]
       }
-      , sendLocalDescription = function(desc) {
-          peer.setLocalDescription(desc);
-          /*$http({
-            'method': 'POST',
-            'url': $rootScope.bootstrapServer + '/',
-            'data': {
-              'nodeIdentifier': $rootScope.nodeIdentifier,
-              'description': desc
+      , peerConnection = new $window.RTCPeerConnection(configuration, mediaConstraints);
+
+    peerConnection.onsignalingstatechange = function(event) {
+      $window.console.info('signaling state change: ', event.target.signalingState);
+    };
+    peerConnection.oniceconnectionstatechange = function(event) {
+      $window.console.info('ice connection state change: ', event.target.iceConnectionState);
+    };
+    peerConnection.onicegatheringstatechange = function(event) {
+      $window.console.info('ice gathering state change: ', event.target.iceGatheringState);
+    };
+    peerConnection.onicecandidate = function(event) {
+      var candidate = event.candidate;
+      if(!candidate) {
+        return;
+      }
+
+      $http({
+        'method': 'POST',
+        'url': $rootScope.bootstrapServer + '/',
+        'data': {
+          'nodeIdentifier': $rootScope.nodeIdentifier,
+          'description': JSON.stringify({
+            'type': 'ice',
+            'sdp': {
+              'candidate': candidate.candidate,
+              'sdpMid': candidate.sdpMid,
+              'sdpMLineIndex': candidate.sdpMLineIndex
             }
-          });*/
+          })
+        }
+      });
+    };
+
+    var sendOffer = function(offer) {
+        $http({
+          'method': 'POST',
+          'url': $rootScope.bootstrapServer + '/',
+          'data': {
+            'nodeIdentifier': $rootScope.nodeIdentifier,
+            'description': JSON.stringify({
+              'type': offer.type,
+              'sdp': offer.sdp
+            })
+          }
+        }).success(function(response) {
+          var data = JSON.parse(response);
+          if (data.type === 'answer') {
+
+            peerConnection.setRemoteDescription(new $window.RTCSessionDescription(data)
+              , function() {
+
+                $window.console.log('waiting data channel...');
+              }
+              , function(err) {
+
+                throw err;
+              });
+          } else if (data.type === 'ice') {
+
+            var candidate = new $window.RTCIceCandidate(data.sdp.candidate);
+            peerConnection.addIceCandidate(candidate);
+          }
+        });
+      }
+      , sendLocalDescription = function(desc) {
+          peerConnection.setLocalDescription(new $window.RTCSessionDescription(desc),
+          sendOffer.bind(undefined, desc),
+          function(err) {
+            throw err;
+          });
         };
 
-    var peer = new $window.RTCPeerConnection(configuration, mediaConstraints);
-    var bootstapChannel = peer.createDataChannel('bootstap', { reliable: false });
-
+    var bootstapChannel = peerConnection.createDataChannel('bootstap', {
+      reliable: {
+        outOfOrderAllowed: false,
+        maxRetransmitNum: 10
+      }
+    });
+    bootstapChannel.binaryType = 'arraybuffer';
     bootstapChannel.onopen = function() {
-      console.log('OPEN');
+      var data = new Uint8Array([1, 2, 3, 4]);
+      this.send(data.buffer);
+    };
+    bootstapChannel.onmessage = function(event) {
+      var data = event.data;
+      $window.console.log('onmessage', data);
+    };
+    bootstapChannel.onclose = function(event) {
+      $window.console.info('onclose', event);
+    };
+    bootstapChannel.onerror = function(error) {
+      throw error;
     };
 
-    bootstapChannel.onclose = function() {
-      console.log('CLOSE');
-    };
-
-    peer.onicecandidate = function(event) {
-
-      console.log('Local ice callback.', event);
-      /*if (event.candidate) {
-
-        //var candidateJson = JSON.stringify(event.candidate);
-        //console.log(candidateJson);
-        //http put candidateJson
-      }*/
-    };
-
-    peer.createOffer(sendLocalDescription, function() {
+    peerConnection.createOffer(sendLocalDescription, function() {
       console.error('fail!');
     });
   }]);

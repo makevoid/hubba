@@ -389,9 +389,9 @@
     $rootScope.nodeIdentifier = nodeIdentifier;
     $rootScope.bootstrapServer = 'http://localhost:3000';
 
-    $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;
-    $window.RTCSessionDescription = $window.mozRTCSessionDescription || $window.webkitRTCSessionDescription;
-    $window.RTCIceCandidate = $window.mozRTCIceCandidate || $window.webkitRTCIceCandidate;
+    $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection || $window.RTCPeerConnection;
+    $window.RTCSessionDescription = $window.mozRTCSessionDescription || $window.RTCSessionDescription;
+    $window.RTCIceCandidate = $window.mozRTCIceCandidate || $window.RTCIceCandidate;
 
     var configuration = {
         'iceServers': [
@@ -417,12 +417,13 @@
     peerConnection.onicecandidate = function(event) {
       var candidate = event.candidate;
       if(!candidate) {
+
         return;
       }
 
       $http({
         'method': 'POST',
-        'url': $rootScope.bootstrapServer + '/',
+        'url': $rootScope.bootstrapServer + '/candidate',
         'data': {
           'nodeIdentifier': $rootScope.nodeIdentifier,
           'description': JSON.stringify({
@@ -440,7 +441,7 @@
     var sendOffer = function(offer) {
         $http({
           'method': 'POST',
-          'url': $rootScope.bootstrapServer + '/',
+          'url': $rootScope.bootstrapServer + '/offer',
           'data': {
             'nodeIdentifier': $rootScope.nodeIdentifier,
             'description': JSON.stringify({
@@ -449,7 +450,8 @@
             })
           }
         }).success(function(response) {
-          var data = JSON.parse(response);
+          console.log(response);
+          /*var data = JSON.parse(response);
           if (data.type === 'answer') {
 
             peerConnection.setRemoteDescription(new $window.RTCSessionDescription(data)
@@ -465,7 +467,7 @@
 
             var candidate = new $window.RTCIceCandidate(data.sdp.candidate);
             peerConnection.addIceCandidate(candidate);
-          }
+          }*/
         });
       }
       , sendLocalDescription = function(desc) {

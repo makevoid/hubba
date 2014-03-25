@@ -96,9 +96,17 @@
   app.use(express.urlencoded());
   app.use(express.json());
 
-  app.post('/', function(req, res) {
+  app.post('/candidate', function(req, res) {
+    /*var requesterNodeIdentifier = req.body.nodeIdentifier
+      , remoteDescription = JSON.parse(req.body.description);*/
+    console.log(req.body);
+
+    res.send(OK);
+  });
+
+  app.post('/offer', function(req, res) {
     var requesterNodeIdentifier = req.body.nodeIdentifier
-      , remoteDescription = req.body.description;
+      , remoteDescription = JSON.parse(req.body.description);
 
     if(nodeIdentifier.localeCompare(requesterNodeIdentifier) === 0) {
 
@@ -129,6 +137,7 @@
         coolDump,
         coolDump);
     }
+
     res.send(OK);
   });
 

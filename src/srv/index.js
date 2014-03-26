@@ -29,7 +29,8 @@
         X_REQUEST_WITH_HEADER + COMMA_SPACE +
         X_HTTP_METHOD_OVERRIDE_HEADER + COMMA_SPACE +
         CONTENT_LENGTH_HEADER
-    , OK = 200;
+    , OK = 200
+    , KO = 400;
 
   var crypto = require('crypto')
     , express = require('express')
@@ -80,10 +81,9 @@
       })();
 
   var redPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
-    , blackPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints);
-
-  var coolDump = function(a,b,c,d) {
-        console.log(a,b,c,d);
+    , blackPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
+    , peerOccupiedBy = { red : undefined,
+        black : undefined
       };
 
   /**
@@ -97,10 +97,16 @@
   app.use(express.json());
 
   app.post('/candidate', function(req, res) {
-    /*var requesterNodeIdentifier = req.body.nodeIdentifier
-      , remoteDescription = JSON.parse(req.body.description);*/
-    console.log(req.body);
+    var requesterNodeIdentifier = req.body.nodeIdentifier
+      , remoteDescription = JSON.parse(req.body.description);
 
+    if (requesterNodeIdentifier === peerOccupiedBy.red) {
+
+      redPeer.addIceCandidate(new wrtc.RTCIceCandidate(remoteDescription.sdp.candidate));
+    } else if (requesterNodeIdentifier === peerOccupiedBy.black) {
+
+      blackPeer.addIceCandidate(new wrtc.RTCIceCandidate(remoteDescription.sdp.candidate));
+    }
     res.send(OK);
   });
 
@@ -112,33 +118,36 @@
 
       process.exit(1);
       throw 'Something very bad happen, two nodes with the same identifier...';
-    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) < 0) {
+    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) < 0 && !peerOccupiedBy.black) {
       //I'm smaller of requester -> he goes BLACK
 
-      blackPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription),
-        coolDump,
-        coolDump);
-
-      /*new wrtc.RTCSessionDescription(remoteDescription), function() {
-        console.log('A');
-      }, function() {
-        console.log('B');
-      });
+      blackPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
+      peerOccupiedBy.black = requesterNodeIdentifier;
       blackPeer.createAnswer(function(sdp) {
 
         res.json(sdp);
-      }, function(a, b, c) {
-        console.log('boom', a, b, c);
-      });*/
-    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0) {
+      }, function(err) {
+
+        peerOccupiedBy.black = undefined;
+        res.send(KO, err);
+      });
+    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0 && !peerOccupiedBy.red) {
       //I'm bigger of requester -> he goes RED
 
-      redPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription),
-        coolDump,
-        coolDump);
-    }
+      redPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
+      peerOccupiedBy.red = requesterNodeIdentifier;
+      redPeer.createAnswer(function(sdp) {
 
-    res.send(OK);
+        res.json(sdp);
+      }, function(err) {
+
+        peerOccupiedBy.red = undefined;
+        res.send(KO, err);
+      });
+    } else {
+
+      res.send(KO);
+    }
   });
 
   app.listen(process.env.PORT, function() {

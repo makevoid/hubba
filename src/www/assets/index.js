@@ -435,6 +435,15 @@
             }
           })
         }
+      }).success(function(response) {
+        console.log(response);
+        /*
+         else if (data.type === 'ice') {
+
+            var candidate = new $window.RTCIceCandidate(data.sdp.candidate);
+            peerConnection.addIceCandidate(candidate);
+          }
+        */
       });
     };
 
@@ -450,24 +459,16 @@
             })
           }
         }).success(function(response) {
-          console.log(response);
-          /*var data = JSON.parse(response);
-          if (data.type === 'answer') {
 
-            peerConnection.setRemoteDescription(new $window.RTCSessionDescription(data)
-              , function() {
+          peerConnection.setRemoteDescription(new $window.RTCSessionDescription(response)
+            , function() {
 
-                $window.console.log('waiting data channel...');
-              }
-              , function(err) {
+              $window.console.log('waiting data channel...');
+            }
+            , function(err) {
 
-                throw err;
-              });
-          } else if (data.type === 'ice') {
-
-            var candidate = new $window.RTCIceCandidate(data.sdp.candidate);
-            peerConnection.addIceCandidate(candidate);
-          }*/
+              throw err;
+            });
         });
       }
       , sendLocalDescription = function(desc) {

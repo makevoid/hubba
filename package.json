@@ -16,6 +16,7 @@
   },
   "license": "GPL-2.0",
   "dependencies": {
+    "rsvp": "*.*.*",
     "express": "3.4.*",
     "twofish": "0.1.1",
     "wrtc": "0.*.*"

@@ -32,7 +32,8 @@
     , OK = 200
     , KO = 400;
 
-  var crypto = require('crypto')
+  var RSVP = require('rsvp')
+    , crypto = require('crypto')
     , express = require('express')
     , app = express()
     , wrtc = require('wrtc')
@@ -80,11 +81,70 @@
         return result;
       })();
 
-  var redPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
+  var handleMessage = function(event) {
+        console.log(event);
+      }
+    , handleReceiveChannelStateChange = function() {
+        console.log(this.readyState);
+      }
+    , redPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
     , blackPeer = new wrtc.RTCPeerConnection(configuration, mediaConstraints)
+    , redChannel
+    , blackChannel
     , peerOccupiedBy = { red : undefined,
         black : undefined
       };
+
+  redPeer.ondatachannel = function(event) {
+    console.log(event);
+    redChannel = event.channel;
+    redChannel.onmessage = handleMessage;
+    redChannel.onopen = handleReceiveChannelStateChange;
+    redChannel.onclose = handleReceiveChannelStateChange;
+  };
+  redPeer.onicecandidate = function(event) {
+
+    //send to caller of candidate (event.candidate);
+  };
+
+  blackPeer.ondatachannel = function(event) {
+    console.log(event);
+    blackChannel = event.channel;
+    blackChannel.onmessage = handleMessage;
+    blackChannel.onopen = handleReceiveChannelStateChange;
+    blackChannel.onclose = handleReceiveChannelStateChange;
+  };
+  blackPeer.onicecandidate = function(event) {
+
+    //send to caller of candidate (event.candidate);
+  };
+
+  var createABlackAnswer = function(requesterNodeIdentifier) {
+      return new RSVP.Promise(function(resolve, reject) {
+        blackPeer.createAnswer(function(sdp) {
+
+          blackPeer.setLocalDescription(sdp);
+          peerOccupiedBy.black = requesterNodeIdentifier;
+          resolve(sdp);
+        }, function(err) {
+
+          reject(err);
+        });
+      });
+    }
+    , createARedAnswer = function(requesterNodeIdentifier) {
+      return new RSVP.Promise(function(resolve, reject) {
+        redPeer.createAnswer(function(sdp) {
+
+          peerOccupiedBy.red = requesterNodeIdentifier;
+          redPeer.setLocalDescription(sdp);
+          resolve(sdp);
+        }, function(err) {
+
+          reject(err);
+        });
+      });
+    };
 
   /**
    *
@@ -98,16 +158,18 @@
 
   app.post('/candidate', function(req, res) {
     var requesterNodeIdentifier = req.body.nodeIdentifier
-      , remoteDescription = JSON.parse(req.body.description);
+      , candidate = JSON.parse(req.body.candidate);
 
     if (requesterNodeIdentifier === peerOccupiedBy.red) {
 
-      redPeer.addIceCandidate(new wrtc.RTCIceCandidate(remoteDescription.sdp.candidate));
+      redPeer.addIceCandidate(new wrtc.RTCIceCandidate(candidate));
     } else if (requesterNodeIdentifier === peerOccupiedBy.black) {
 
-      blackPeer.addIceCandidate(new wrtc.RTCIceCandidate(remoteDescription.sdp.candidate));
+      blackPeer.addIceCandidate(new wrtc.RTCIceCandidate(candidate));
+    } else {
+
+      res.send(KO);
     }
-    res.send(OK);
   });
 
   app.post('/offer', function(req, res) {
@@ -122,27 +184,23 @@
       //I'm smaller of requester -> he goes BLACK
 
       blackPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
-      peerOccupiedBy.black = requesterNodeIdentifier;
-      blackPeer.createAnswer(function(sdp) {
+      createABlackAnswer(requesterNodeIdentifier).then(function(successData) {
 
-        res.json(sdp);
-      }, function(err) {
+        res.json(successData);
+      }, function(errorData) {
 
-        peerOccupiedBy.black = undefined;
-        res.send(KO, err);
+        res.json(KO, errorData);
       });
     } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0 && !peerOccupiedBy.red) {
       //I'm bigger of requester -> he goes RED
 
       redPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
-      peerOccupiedBy.red = requesterNodeIdentifier;
-      redPeer.createAnswer(function(sdp) {
+      createARedAnswer(requesterNodeIdentifier).then(function(successData) {
 
-        res.json(sdp);
-      }, function(err) {
+        res.json(successData);
+      }, function(errorData) {
 
-        peerOccupiedBy.red = undefined;
-        res.send(KO, err);
+        res.json(KO, errorData);
       });
     } else {
 

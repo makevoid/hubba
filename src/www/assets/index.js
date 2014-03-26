@@ -403,7 +403,34 @@
         optional: [
         ]
       }
-      , peerConnection = new $window.RTCPeerConnection(configuration, mediaConstraints);
+      , peerConnection = new $window.RTCPeerConnection(configuration, mediaConstraints)
+      , bootstapChannel = peerConnection.createDataChannel('bootstap', {
+        reliable: {
+          outOfOrderAllowed: false,
+          maxRetransmitNum: 10
+        }
+      }, function(){
+        console.log('channel callback');
+      });
+
+    //*
+    bootstapChannel.binaryType = 'arraybuffer';
+    bootstapChannel.onopen = function() {
+      console.log('opened');
+      var data = new Uint8Array([1, 2, 3, 4]);
+      this.send(data.buffer);
+    };
+    bootstapChannel.onmessage = function(event) {
+      var data = event.data;
+      $window.console.log('onmessage', data);
+    };
+    bootstapChannel.onclose = function(event) {
+      $window.console.info('onclose', event);
+    };
+    bootstapChannel.onerror = function(error) {
+      throw error;
+    };
+    //*
 
     peerConnection.onsignalingstatechange = function(event) {
       $window.console.info('signaling state change: ', event.target.signalingState);
@@ -414,6 +441,7 @@
     peerConnection.onicegatheringstatechange = function(event) {
       $window.console.info('ice gathering state change: ', event.target.iceGatheringState);
     };
+
     peerConnection.onicecandidate = function(event) {
       var candidate = event.candidate;
       if(!candidate) {
@@ -426,24 +454,11 @@
         'url': $rootScope.bootstrapServer + '/candidate',
         'data': {
           'nodeIdentifier': $rootScope.nodeIdentifier,
-          'description': JSON.stringify({
-            'type': 'ice',
-            'sdp': {
-              'candidate': candidate.candidate,
-              'sdpMid': candidate.sdpMid,
-              'sdpMLineIndex': candidate.sdpMLineIndex
-            }
-          })
+          'candidate': JSON.stringify(candidate)
         }
       }).success(function(response) {
-        console.log(response);
-        /*
-         else if (data.type === 'ice') {
-
-            var candidate = new $window.RTCIceCandidate(data.sdp.candidate);
-            peerConnection.addIceCandidate(candidate);
-          }
-        */
+        var candidate = new $window.RTCIceCandidate(response);
+        peerConnection.addIceCandidate(candidate);
       });
     };
 
@@ -478,28 +493,6 @@
             throw err;
           });
         };
-
-    var bootstapChannel = peerConnection.createDataChannel('bootstap', {
-      reliable: {
-        outOfOrderAllowed: false,
-        maxRetransmitNum: 10
-      }
-    });
-    bootstapChannel.binaryType = 'arraybuffer';
-    bootstapChannel.onopen = function() {
-      var data = new Uint8Array([1, 2, 3, 4]);
-      this.send(data.buffer);
-    };
-    bootstapChannel.onmessage = function(event) {
-      var data = event.data;
-      $window.console.log('onmessage', data);
-    };
-    bootstapChannel.onclose = function(event) {
-      $window.console.info('onclose', event);
-    };
-    bootstapChannel.onerror = function(error) {
-      throw error;
-    };
 
     peerConnection.createOffer(sendLocalDescription, function() {
       console.error('fail!');

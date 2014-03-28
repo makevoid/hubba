@@ -21,6 +21,7 @@ module.exports = function(grunt) {
       app: 'src/srv',
       frontEndServerPort: 8000,
       backEndServerPort: 3000,
+      backEndWebSocketPort: 3117
     },
     jshint: {
       options: {

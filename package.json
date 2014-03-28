@@ -19,6 +19,7 @@
     "rsvp": "*.*.*",
     "express": "3.4.*",
     "twofish": "0.1.1",
+    "ws": "0.4.*",
     "wrtc": "0.*.*"
   },
   "devDependencies": {

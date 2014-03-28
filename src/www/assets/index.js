@@ -388,10 +388,57 @@
   .run(['$window', '$http', '$rootScope', 'NodeIdentifier', function($window, $http, $rootScope, nodeIdentifier) {
     $rootScope.nodeIdentifier = nodeIdentifier;
     $rootScope.bootstrapServer = 'http://localhost:3000';
+    $rootScope.bootstrapWS = 'ws://localhost:3117';
 
+    var ws = new $window.WebSocket($rootScope.bootstrapWS)
+      , pendingOfferInOpeningWebSocket = []
+      , pendingCandidateInOpeningWebSocket = [];
     $window.RTCPeerConnection = $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection || $window.RTCPeerConnection;
     $window.RTCSessionDescription = $window.mozRTCSessionDescription || $window.RTCSessionDescription;
     $window.RTCIceCandidate = $window.mozRTCIceCandidate || $window.RTCIceCandidate;
+
+    ws.onopen = function() {
+      $window.console.info('WebSocket to', $rootScope.bootstrapWS, 'opened.');
+      if (pendingOfferInOpeningWebSocket.length > 0) {
+
+        for (var i = 0, pendingOfferInOpeningWebSocketLength = pendingOfferInOpeningWebSocket.length; i < pendingOfferInOpeningWebSocketLength; i += 1) {
+
+          this.send(pendingOfferInOpeningWebSocket[i]);
+        }
+      }
+
+      if (pendingCandidateInOpeningWebSocket.length > 0) {
+
+        for (var d = 0, pendingCandidateInOpeningWebSocketLength = pendingCandidateInOpeningWebSocket.length; d < pendingCandidateInOpeningWebSocketLength; d += 1) {
+
+          this.send(pendingCandidateInOpeningWebSocketLength[d]);
+        }
+      }
+    };
+
+    ws.onmessage = function(message) {
+
+      var messageFromWs = JSON.parse(message.data);
+      $window.console.trace('received: %s', messageFromWs.payloadType);
+      if (messageFromWs.payloadType === 'offerResponse') {
+
+        delete messageFromWs.payloadType;
+        peerConnection.setRemoteDescription(new $window.RTCSessionDescription(messageFromWs)
+          , function() {
+
+            $window.console.info('waiting data channel...');
+          }
+          , function(err) {
+
+            $window.console.error(err);
+          });
+      } else if (messageFromWs.payloadType === 'candidateResponse') {
+
+        delete messageFromWs.payloadType;
+        var candidate = new $window.RTCIceCandidate(messageFromWs.candidate);
+        peerConnection.addIceCandidate(candidate);
+      }
+    };
 
     var configuration = {
         'iceServers': [
@@ -441,6 +488,9 @@
     peerConnection.onicegatheringstatechange = function(event) {
       $window.console.info('ice gathering state change: ', event.target.iceGatheringState);
     };
+    peerConnection.ondatachannel = function(event) {
+      $window.console.info('data channel event: ', event);
+    };
 
     peerConnection.onicecandidate = function(event) {
       var candidate = event.candidate;
@@ -449,42 +499,42 @@
         return;
       }
 
-      $http({
-        'method': 'POST',
-        'url': $rootScope.bootstrapServer + '/candidate',
+      var candidatePayload = JSON.stringify({
+        'payloadType': 'candidate',
         'data': {
           'nodeIdentifier': $rootScope.nodeIdentifier,
-          'candidate': JSON.stringify(candidate)
+          'candidate': candidate
         }
-      }).success(function(response) {
-        var candidate = new $window.RTCIceCandidate(response);
-        peerConnection.addIceCandidate(candidate);
       });
+
+      if (ws.readyState === $window.WebSocket.OPEN) {
+
+        ws.send(candidatePayload);
+      } else {
+
+        pendingCandidateInOpeningWebSocket.push(candidatePayload);
+      }
     };
 
     var sendOffer = function(offer) {
-        $http({
-          'method': 'POST',
-          'url': $rootScope.bootstrapServer + '/offer',
+        var offerPayload = JSON.stringify({
+          'payloadType': 'offer',
           'data': {
             'nodeIdentifier': $rootScope.nodeIdentifier,
-            'description': JSON.stringify({
+            'description': {
               'type': offer.type,
               'sdp': offer.sdp
-            })
-          }
-        }).success(function(response) {
-
-          peerConnection.setRemoteDescription(new $window.RTCSessionDescription(response)
-            , function() {
-
-              $window.console.log('waiting data channel...');
             }
-            , function(err) {
-
-              throw err;
-            });
+          }
         });
+
+        if(ws.readyState === $window.WebSocket.OPEN) {
+
+          ws.send(offerPayload);
+        } else {
+
+          pendingOfferInOpeningWebSocket.push(offerPayload);
+        }
       }
       , sendLocalDescription = function(desc) {
           peerConnection.setLocalDescription(new $window.RTCSessionDescription(desc),

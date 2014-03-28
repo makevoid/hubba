@@ -29,14 +29,14 @@
         X_REQUEST_WITH_HEADER + COMMA_SPACE +
         X_HTTP_METHOD_OVERRIDE_HEADER + COMMA_SPACE +
         CONTENT_LENGTH_HEADER
-    , OK = 200
-    , KO = 400;
+    , OK = 200;
 
   var RSVP = require('rsvp')
     , crypto = require('crypto')
     , express = require('express')
     , app = express()
     , wrtc = require('wrtc')
+    , WebSocketServer = require('ws').Server
     , allowCrossDomain = function(req, res, next) {
         res.header(CORS_ACAO, req.headers.origin);
         res.header(CORS_ACAC, true);
@@ -50,7 +50,15 @@
 
           next();
         }
-      };
+      }
+    , wss = new WebSocketServer({ port: 3117/*process.env.WS_PORT*/
+      });
+
+  /**
+   *
+   * Configuration
+   *
+   */
 
   var configuration = { 'iceServers': [
       {'url': 'stun:stun.l.google.com:19302'},
@@ -96,27 +104,17 @@
       };
 
   redPeer.ondatachannel = function(event) {
-    console.log(event);
     redChannel = event.channel;
     redChannel.onmessage = handleMessage;
     redChannel.onopen = handleReceiveChannelStateChange;
     redChannel.onclose = handleReceiveChannelStateChange;
   };
-  redPeer.onicecandidate = function(event) {
-
-    //send to caller of candidate (event.candidate);
-  };
 
   blackPeer.ondatachannel = function(event) {
-    console.log(event);
     blackChannel = event.channel;
     blackChannel.onmessage = handleMessage;
     blackChannel.onopen = handleReceiveChannelStateChange;
     blackChannel.onclose = handleReceiveChannelStateChange;
-  };
-  blackPeer.onicecandidate = function(event) {
-
-    //send to caller of candidate (event.candidate);
   };
 
   var createABlackAnswer = function(requesterNodeIdentifier) {
@@ -144,68 +142,113 @@
           reject(err);
         });
       });
+    }
+    , handleOffer = function(offerData) {
+      return new RSVP.Promise(function(resolve, reject) {
+        var requesterNodeIdentifier = offerData.nodeIdentifier
+          , remoteDescription = offerData.description;
+
+        if(nodeIdentifier.localeCompare(requesterNodeIdentifier) === 0) {
+
+          reject('Something very bad happen, two nodes with the same identifier.');
+        } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) < 0 && !peerOccupiedBy.black) {
+          //I'm smaller of requester -> he goes BLACK
+
+          blackPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
+          createABlackAnswer(requesterNodeIdentifier).then(function(successData) {
+
+            resolve(successData);
+          }, function(errorData) {
+
+            reject(errorData);
+          });
+        } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0 && !peerOccupiedBy.red) {
+          //I'm bigger of requester -> he goes RED
+
+          redPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
+          createARedAnswer(requesterNodeIdentifier).then(function(successData) {
+
+            resolve(successData);
+          }, function(errorData) {
+
+            reject(errorData);
+          });
+        } else {
+
+          reject('If you see this there is a bug somewhere.');
+        }
+      });
+    }
+    , handleCandidate = function(candidateData) {
+      var requesterNodeIdentifier = candidateData.nodeIdentifier
+        , candidate = candidateData.candidate;
+
+      if (requesterNodeIdentifier === peerOccupiedBy.red) {
+
+        redPeer.addIceCandidate(new wrtc.RTCIceCandidate(candidate));
+      } else if (requesterNodeIdentifier === peerOccupiedBy.black) {
+
+        blackPeer.addIceCandidate(new wrtc.RTCIceCandidate(candidate));
+      }
     };
 
-  /**
-   *
-   * Configuration
-   *
-   */
+  wss.on('connection', function(ws) {
+    redPeer.onicecandidate = function(event) {
+
+      var iceCandidate = {};
+      iceCandidate.payloadType = 'candidateResponse';
+      iceCandidate.candidate = event.candidate;
+
+      var candidateResponseJSON = JSON.stringify(iceCandidate);
+      ws.send(candidateResponseJSON);
+    };
+
+    blackPeer.onicecandidate = function(event) {
+
+      var iceCandidate = {};
+      iceCandidate.payloadType = 'candidateResponse';
+      iceCandidate.candidate = event.candidate;
+
+      var candidateResponseJSON = JSON.stringify(iceCandidate);
+      ws.send(candidateResponseJSON);
+    };
+
+    ws.on('message', function(message) {
+
+      var messageFromWs = JSON.parse(message);
+      console.info('received: %s', messageFromWs.payloadType);
+      if (messageFromWs.payloadType === 'offer') {
+
+        handleOffer(messageFromWs.data)
+        .then(function(offerResponse) {
+
+          offerResponse.payloadType = 'offerResponse';
+          var offerResponseJSON = JSON.stringify(offerResponse);
+          ws.send(offerResponseJSON);
+        }).catch(function(error) {
+
+          process.stderr.write(error);
+          process.exit(1);
+        });
+      } else if (messageFromWs.payloadType === 'candidate') {
+
+        handleCandidate(messageFromWs.data);
+      }
+    });
+  });
+
   app.disable('x-powered-by');
   app.use(allowCrossDomain);
   app.use(express.urlencoded());
   app.use(express.json());
 
-  app.post('/candidate', function(req, res) {
-    var requesterNodeIdentifier = req.body.nodeIdentifier
-      , candidate = JSON.parse(req.body.candidate);
-
-    if (requesterNodeIdentifier === peerOccupiedBy.red) {
-
-      redPeer.addIceCandidate(new wrtc.RTCIceCandidate(candidate));
-    } else if (requesterNodeIdentifier === peerOccupiedBy.black) {
-
-      blackPeer.addIceCandidate(new wrtc.RTCIceCandidate(candidate));
-    } else {
-
-      res.send(KO);
-    }
-  });
-
-  app.post('/offer', function(req, res) {
-    var requesterNodeIdentifier = req.body.nodeIdentifier
-      , remoteDescription = JSON.parse(req.body.description);
-
-    if(nodeIdentifier.localeCompare(requesterNodeIdentifier) === 0) {
-
-      process.exit(1);
-      throw 'Something very bad happen, two nodes with the same identifier...';
-    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) < 0 && !peerOccupiedBy.black) {
-      //I'm smaller of requester -> he goes BLACK
-
-      blackPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
-      createABlackAnswer(requesterNodeIdentifier).then(function(successData) {
-
-        res.json(successData);
-      }, function(errorData) {
-
-        res.json(KO, errorData);
-      });
-    } else if(nodeIdentifier.localeCompare(requesterNodeIdentifier) > 0 && !peerOccupiedBy.red) {
-      //I'm bigger of requester -> he goes RED
-
-      redPeer.setRemoteDescription(new wrtc.RTCSessionDescription(remoteDescription));
-      createARedAnswer(requesterNodeIdentifier).then(function(successData) {
-
-        res.json(successData);
-      }, function(errorData) {
-
-        res.json(KO, errorData);
-      });
-    } else {
-
-      res.send(KO);
-    }
+  /**
+   *
+   * Routes
+   *
+   */
+  app.get('/', function(req, res) {
+    res.send(OK);
   });
 
   app.listen(process.env.PORT, function() {

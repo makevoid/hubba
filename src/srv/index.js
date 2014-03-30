@@ -1,4 +1,4 @@
-(function() {
+(function(require) {
   'use strict';
   var COMMA_SPACE = ', '
     , CORS_ACAC = 'Access-Control-Allow-Credentials'
@@ -51,7 +51,8 @@
           next();
         }
       }
-    , wss = new WebSocketServer({ port: 3117/*process.env.WS_PORT*/
+    , wss = new WebSocketServer({ port: process.env.WS_PORT }, function() {
+        process.stdout.write('Bootstrap server listen websocket connections on port ' + process.env.WS_PORT + '\r\n');
       });
 
   /**
@@ -175,6 +176,7 @@
           });
         } else {
 
+          //TODO intervene here for topology creation.
           reject('If you see this there is a bug somewhere.');
         }
       });
@@ -216,7 +218,7 @@
     ws.on('message', function(message) {
 
       var messageFromWs = JSON.parse(message);
-      console.info('received: %s', messageFromWs.payloadType);
+      process.stdout.write('received: ' + messageFromWs.payloadType);
       if (messageFromWs.payloadType === 'offer') {
 
         handleOffer(messageFromWs.data)
@@ -251,7 +253,7 @@
     res.send(OK);
   });
 
-  app.listen(process.env.PORT, function() {
-    console.log('bootstrap server listen on port ' + process.env.PORT);
+  app.listen(process.env.HTTP_PORT, function() {
+    process.stdout.write('Bootstrap server listen http connections on port ' + process.env.HTTP_PORT + '\r\n');
   });
-})();
+})(require);

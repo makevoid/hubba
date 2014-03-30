@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
 //  var banner = ['/*!',
 //    ' * Hubba v<%= pkg.version %>',
@@ -11,6 +11,25 @@ module.exports = function(grunt) {
 //    ' * <%= grunt.template.today("yyyy-mm-dd") %>',
 //    ' */\n\n'
 //  ].join('\n');
+
+  var nodemonCallBack = function (nodemon) {
+      nodemon.on('log', function (event) {
+
+        process.stdout.write(event.colour + '\r\n');
+      });
+
+      nodemon.on('restart', function(files) {
+
+        process.stdout.write('Hubba restart due ' + files + ' trigger restart\r\n');
+        grunt.task.run('jshint');
+        //grunt.task.run('jshint');
+      });
+
+      nodemon.on('exit', function () {
+
+        process.stdout.write('Hubba exited correctly' + '\r\n');
+      });
+    };
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -97,29 +116,34 @@ module.exports = function(grunt) {
         }
       }
     },
-    express: {
-      options: {
-        port: '<%= confs.backEndServerPort %>',
-        script: '<%= confs.app %>/index.js'
-      },
+    concurrent: {
       dev: {
+        tasks: ['nodemon:dev', 'node-inspector:dev', 'watch:beDev'],
         options: {
-          debug: true,
-          /* jshint -W106 */
-          node_env: 'development'
-          /* jshint +W106 */
+          logConcurrentOutput: true
+        }
+      }
+    },
+    nodemon: {
+      dev: {
+        script: '<%= confs.app %>/index.js',
+        options: {
+          nodeArgs: ['--debug'],
+          callback: nodemonCallBack,
+          env: {
+            HTTP_PORT: '<%= confs.backEndServerPort %>',
+            WS_PORT: '<%= confs.backEndWebSocketPort %>'
+          }
         }
       },
       prod: {
+        script: '<%= confs.app %>/index.js',
         options: {
-          /* jshint -W106 */
-          node_env: 'production'
-          /* jshint +W106 */
-        }
-      },
-      test: {
-        options: {
-          script: '<%= confs.appSpec %>/test.js'
+          callback: nodemonCallBack,
+          env: {
+            HTTP_PORT: '<%= confs.backEndServerPort %>',
+            WS_PORT: '<%= confs.backEndWebSocketPort %>'
+          }
         }
       }
     },
@@ -141,9 +165,7 @@ module.exports = function(grunt) {
           '<%= confs.app %>/**/*.js'
         ],
         tasks: [
-          'express:dev:stop',
-          'jshint',
-          'express:dev:start'
+          'jshint'
         ],
         options: {
           spawn: false
@@ -163,15 +185,14 @@ module.exports = function(grunt) {
     }
   });
 
-  // NPM Tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-contrib-connect');
-  grunt.loadNpmTasks('grunt-express-server');
+  grunt.loadNpmTasks('grunt-concurrent');
+  grunt.loadNpmTasks('grunt-nodemon');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-node-inspector');
 
-  // Default tasks (when type grunt on terminal).
   grunt.registerTask('default', [
     'jshint',
     'karma:unit',
@@ -183,11 +204,6 @@ module.exports = function(grunt) {
 
   grunt.registerTask('server', [
     'jshint',
-    'express:dev',
-    'watch:beDev'
-  ]);
-
-  grunt.registerTask('node-debug', [
-    'node-inspector:dev'
+    'concurrent:dev'
   ]);
 };

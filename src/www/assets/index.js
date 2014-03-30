@@ -545,7 +545,7 @@
         };
 
     peerConnection.createOffer(sendLocalDescription, function() {
-      console.error('fail!');
+      $window.console.error('Offer creation failed.');
     });
   }]);
 })(window.angular);

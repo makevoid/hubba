@@ -21,8 +21,6 @@ module.exports = function (grunt) {
       nodemon.on('restart', function(files) {
 
         process.stdout.write('Hubba restart due ' + files + ' trigger restart\r\n');
-        grunt.task.run('jshint');
-        //grunt.task.run('jshint');
       });
 
       nodemon.on('exit', function () {

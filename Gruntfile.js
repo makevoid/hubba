@@ -131,7 +131,10 @@ module.exports = function (grunt) {
           env: {
             HTTP_PORT: '<%= confs.backEndServerPort %>',
             WS_PORT: '<%= confs.backEndWebSocketPort %>'
-          }
+          },
+          watch: [
+            '<%= confs.app %>/**/*.js'
+          ]
         }
       },
       prod: {
